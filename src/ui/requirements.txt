@@ -1,0 +1,9 @@
+mmh3
+numpy
+pandas
+streamlit
+st-annotated-text
+Markdown
+httpx
+streamlit-chat
+pydantic

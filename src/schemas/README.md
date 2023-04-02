@@ -1,0 +1,1 @@
+# Schema definitions shared by the API and UI 

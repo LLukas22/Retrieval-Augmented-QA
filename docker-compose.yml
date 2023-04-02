@@ -1,0 +1,81 @@
+version: "3.9"
+services:
+  #Rest api to access the models
+  haystack-api:
+    build:
+      context: ./src
+      dockerfile: API.Dockerfile
+    image: haystack-api
+    container_name: haystack-api
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - HAYSTACK_TELEMETRY_ENABLED=false
+      - ELASTICSEARCH_HOST=elasticsearch
+      - ELASTICSEARCH_PORT=9200
+      - PRELOAD_MODELS=true
+      - USE_GPU=true
+      - HUGGINGFACE_TOKEN=${HF_TOKEN}
+      - OPENAI_TOKEN=${HF_TOKEN}
+    #cache model downloads over restarts
+    volumes:
+      - ./huggingface_cache:/huggingface/cache
+    depends_on:
+      - elasticsearch
+    networks:
+      - qa-network
+    #Pass gpus to the container
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+  #Streamlit ui to easily use the api
+  # haystack-ui:
+  #   build:
+  #     context: ./src
+  #     dockerfile: UI.Dockerfile
+  #   image: haystack-ui
+  #   container_name: haystack-ui
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8501:8501"
+  #   environment:
+  #     - API_HOST=haystack-api
+  #   depends_on:
+  #     - haystack-api
+  #   networks:
+  #     - qa-network
+  #Elasticsearch to use as a database for the API
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.1
+    container_name: elasticsearch
+    restart: unless-stopped
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512M -Xmx512M
+    volumes:
+      - ./elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - qa-network
+  #Kibana to visualize the Elaticsearch data
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:8.5.1
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200    # address of elasticsearch docker container which kibana will connect
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch                                   # kibana will start when elasticsearch has started
+    networks:
+      - qa-network
+networks:
+  qa-network:
+    external: false
+    name: qa-network
