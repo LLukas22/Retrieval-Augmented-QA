@@ -2,14 +2,14 @@ from typing import List, Dict, Any, Tuple, Optional
 
 import logging
 from time import sleep
-from .config import API_ENDPOINT
+from ui.config import API_ENDPOINT
 import httpx
 from httpx._client import UseClientDefault
 import streamlit as st
 import pydantic
-from implementation.api.schemas.health import HealthResponse
-from implementation.api.schemas.query import QueryResponse,QueryRequest,SearchResponse,SearchRequest
-from implementation.api.schemas.base import Document,Answer
+from schemas.health import HealthResponse
+from schemas.query import SearchResponse,QueryRequest,QAResponse
+from haystack.schema import Document,Answer,Span
 
 HEALTH = "health"
 QUERY = "qa"
@@ -42,7 +42,7 @@ def sidebar_footer()->None:
         }}
     </style>
     <div class="haystack-footer">
-        <p>View on <a href="https://github.com/LLukas22/Master">GitHub</a></p>
+        <p>View on <a href="https://github.com/LLukas22/Retrieval-Augmented-QA">GitHub</a></p>
         <h4>Built with <a href="https://www.deepset.ai/haystack">Haystack</a>{hs_version}</h4>
     </div>
     """,
@@ -126,7 +126,7 @@ def haystack_version():
         logging.exception(e)
     return None
 
-def query(query, filters={}, top_k_reader=5, top_k_retriever=5) -> Optional[Tuple[QueryResponse,Dict[str,Any]]]:
+def query(query, filters={}, top_k_reader=5, top_k_retriever=5) -> Optional[Tuple[QAResponse,Dict[str,Any]]]:
     """
     Send a query to the REST API and parse the answer.
     Returns both a ready-to-use representation of the results and the raw JSON.
@@ -149,12 +149,12 @@ def query(query, filters={}, top_k_reader=5, top_k_retriever=5) -> Optional[Tupl
     if "errors" in response:
         raise Exception(", ".join(response["errors"]))
 
-    parsed_response = pydantic.parse_obj_as(type_=QueryResponse,obj=response)
+    parsed_response = pydantic.parse_obj_as(type_=QAResponse,obj=response)
     return parsed_response,response
 
 def search(query, filters={}, top_k=5)->Optional[Tuple[SearchResponse,Dict[str,Any]]]:
     url="/search"
-    request=SearchRequest(query=query)
+    request=QueryRequest(query=query)
     request.params = {
         "filters": filters,
         "DPR":{ "top_k": top_k},
@@ -168,7 +168,7 @@ def search(query, filters={}, top_k=5)->Optional[Tuple[SearchResponse,Dict[str,A
     if "errors" in response:
         raise Exception(", ".join(response["errors"]))
 
-    parsed_response = pydantic.parse_obj_as(type_=QueryResponse,obj=response)
+    parsed_response = pydantic.parse_obj_as(type_=SearchResponse,obj=response)
     return parsed_response,response
     
     

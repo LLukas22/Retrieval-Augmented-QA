@@ -1,9 +1,15 @@
 import os
 import sys
-sys.path.insert(0, os.path.join(os.getcwd(),"src"))
+from pathlib import Path
+
+root = str(Path(__file__).parent.parent)
+
+if root not in sys.path:
+    sys.path.insert(0, root)
 
 import streamlit as st
-from implementation.ui.utils import sidebar_footer
+from ui.utils import sidebar_footer
+
 st.set_page_config(
     page_title="Welcome",
     page_icon="👋",

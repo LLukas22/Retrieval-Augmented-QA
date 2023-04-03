@@ -1,6 +1,6 @@
 import streamlit as st
 
-from implementation.ui.utils import system_info,haystack_status,sidebar_footer
+from ui.utils import system_info,haystack_status,sidebar_footer
 
 st.set_page_config(page_title="System Information", page_icon="🖥️", layout="wide")
 

@@ -8,7 +8,7 @@ from annotated_text import annotation,annotated_text
 from markdown import markdown
 import time
 
-from implementation.ui.utils import search,sidebar_footer,haystack_status,get_backlink
+from utils import search,sidebar_footer,haystack_status,get_backlink
 
 def render():
     st.set_page_config(page_title="🔎Semantic Search",layout="wide")

@@ -12,8 +12,7 @@ except ImportError:
 from pydantic import BaseModel, Field, Extra
 from pydantic import BaseConfig
 
-#Use this instead of from haystack.schema import Document,Answer
-from .base import Document,Answer
+from haystack.schema import Document,Answer
 
 BaseConfig.arbitrary_types_allowed = True
 BaseConfig.json_encoders = {np.ndarray: lambda x: x.tolist(), pd.DataFrame: lambda x: x.to_dict(orient="records")}
@@ -24,12 +23,7 @@ class RequestBaseModel(BaseModel):
     class Config:
         # Forbid any extra fields in the request to avoid silent failures
         extra = Extra.forbid
-
-class SearchRequest(RequestBaseModel):
-    query: str
-    params: Optional[dict] = None
-    debug: Optional[bool] = False
-    
+        
 class SearchResponse(BaseModel):
     query: str
     answers: List[Answer] = []
@@ -41,7 +35,7 @@ class QueryRequest(RequestBaseModel):
     params: Optional[dict] = None
     debug: Optional[bool] = False
 
-class QueryResponse(BaseModel):
+class QAResponse(BaseModel):
     query: str
     answers: List[Answer] = []
     documents: List[Document] = []
@@ -64,6 +58,10 @@ class CreateLabelSerialized(RequestBaseModel):
     updated_at: Optional[str] = None
     meta: Optional[dict] = None
     filters: Optional[dict] = None
-
+    
+    
+class ReindexRequest(RequestBaseModel):
+    update_existing_embeddings:bool = Field(False, description="If True, existing embeddings will be updated. If False, only unindexed documents will be indexed.")
+    batch_size:int = Field(10000, description="Number of documents to index at once.")
 
 

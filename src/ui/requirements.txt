@@ -7,3 +7,4 @@ Markdown
 httpx
 streamlit-chat
 pydantic
+# also farm-haystack without dependencies (only used for schema evaluation)

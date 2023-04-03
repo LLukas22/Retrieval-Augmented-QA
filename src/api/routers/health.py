@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional,Dict
 
 import os
 import pynvml
@@ -12,11 +12,11 @@ from ._router import BaseRouter
 class HealthRouter(BaseRouter):
     def __init__(self):
         super().__init__(prefix="/health")
-        self.router.add_api_route("/status", self.check_status, methods=["GET"])
-        self.router.add_api_route("/hs_version", self.haystack_version, methods=["GET"])
-        self.router.add_api_route("/health", self.get_health_status, methods=["GET"],response_model=HealthResponse, status_code=200)
+        self.router.add_api_route("/check", self.check, methods=["GET"])
+        self.router.add_api_route("/version", self.versions, methods=["GET"])
+        self.router.add_api_route("/usage", self.usage, methods=["GET"],response_model=HealthResponse, status_code=200)
     
-    def check_status(self)-> bool:
+    def check(self)-> bool:
         """
         This endpoint can be used during startup to understand if the
         server is ready to take any requests, or is still loading.
@@ -26,16 +26,31 @@ class HealthRouter(BaseRouter):
         """
         return True
 
-    def haystack_version(self):
+    def versions(self)->Dict[str,str]:
         """
-        Get the running Haystack version.
+        Get the versions of the installed packages.
         """
-        from haystack import __version__
-        return {"hs_version": __version__}
+        from haystack import __version__ as hs_version
+        from transformers import __version__ as transformers_version
+        from torch import __version__ as torch_version
+        from accelerate import __version__ as accelerate_version
+        from fastapi import __version__ as fastapi_version
+        from starlette import __version__ as starlette_version
+        from uvicorn import __version__ as uvicorn_version
+        
+        return {
+            "haystack": hs_version,
+            "transformers": transformers_version,
+            "torch": torch_version,
+            "accelerate": accelerate_version,
+            "fastapi":fastapi_version,
+            "starlette":starlette_version,
+            "uvicorn":uvicorn_version 
+            }
 
-    def get_health_status(self):
+    def usage(self):
         """
-        This endpoint allows external systems to monitor the health of the Haystack REST API.
+        This endpoint allows external systems to monitor the uasge of the node running the api.
         """
 
         gpus: List[GPUInfo] = []

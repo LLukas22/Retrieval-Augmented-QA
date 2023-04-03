@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from implementation.ui.utils import update_embeddings,sidebar_footer
+from ui.utils import update_embeddings,sidebar_footer
 
 st.set_page_config(page_title="Embeddings", page_icon="✳️",layout="wide")
 

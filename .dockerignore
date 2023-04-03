@@ -1,2 +1,3 @@
 ./data
 ./elasticsearch-data
+./src/importer/wikipedia/cache

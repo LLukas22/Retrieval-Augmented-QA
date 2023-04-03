@@ -8,7 +8,7 @@ from annotated_text import annotation,annotated_text
 from markdown import markdown
 import time
 
-from implementation.ui.utils import haystack_status,query,get_backlink,sidebar_footer
+from ui.utils import haystack_status,query,get_backlink,sidebar_footer
 
 # Sliders
 QUESTION_TAG = "DEFAULT_QUESTION_AT_STARTUP"

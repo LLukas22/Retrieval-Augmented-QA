@@ -1,8 +1,8 @@
 import streamlit as st
 
 from typing import Optional
-from implementation.ui.utils import system_info,haystack_status,sidebar_footer,get
-from implementation.api.schemas.pipelines import PipelinesResponse,PipelineDescription,ComponentDescription
+from ui.utils import system_info,haystack_status,sidebar_footer,get
+from schemas.pipelines import PipelinesResponse,PipelineDescription,ComponentDescription
 
 def get_pipelines():
     url="/get_pipelines"

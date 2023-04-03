@@ -18,7 +18,7 @@ logging.getLogger("haystack").setLevel(logging.INFO)
 from dependency_injector.wiring import Provide, inject
 
 from api.composition import Container
-from api.routers import HealthRouter,PipelineRouter
+from api.routers import HealthRouter,PipelineRouter,QueryRouter,DocumentRouter
 from api.errors.http_error import http_error_handler
 
 from fastapi import FastAPI, HTTPException, APIRouter
@@ -34,12 +34,15 @@ def parse_bool(value:str)->bool:
 
 @inject
 def App(
+    container:Container,
     health_router:HealthRouter=Provide[Container.health_router],
-    pipeline_router:PipelineRouter=Provide[Container.pipeline_router]
+    pipeline_router:PipelineRouter=Provide[Container.pipeline_router],
+    document_router:DocumentRouter=Provide[Container.document_router],
+    query_router:QueryRouter=Provide[Container.query_router]
     ):
     
     from haystack import __version__ as haystack_version
-    app = FastAPI(title="Haystack REST API", debug=True, version=haystack_version, root_path="/")
+    app = FastAPI(title="Haystack REST API", debug=container.config.debug(), version=haystack_version, root_path="/")
     
     app.add_middleware(
         CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"]
@@ -48,9 +51,11 @@ def App(
     app.add_exception_handler(HTTPException, http_error_handler)
        
     router = APIRouter()
+    router.include_router(query_router.router)
     router.include_router(health_router.router)
     router.include_router(pipeline_router.router)
-
+    router.include_router(document_router.router)
+     
     app.include_router(router)
     return app
         
@@ -70,9 +75,10 @@ if __name__ == "__main__":
     container.config.use_gpu.from_env("USE_GPU",as_=parse_bool,default=False)
     container.config.use_8bit.from_env("USE_8BIT",as_=parse_bool,default=False)
     container.config.concurency_limit.from_env("CONCURENCY_LIMIT",as_=int,default=5)
+    container.config.debug.from_env("DEBUG",as_=parse_bool,default=True)
     container.wire(modules=[__name__])
     
    
-    app = App()    
+    app = App(container)    
     logging.info("Open http://127.0.0.1:8001/docs to see Swagger API Documentation.")
     uvicorn.run(app, host="0.0.0.0", port=8001)

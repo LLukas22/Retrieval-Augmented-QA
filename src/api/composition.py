@@ -4,7 +4,7 @@ from .routers.utils import RequestLimiter
 from haystack.document_stores import ElasticsearchDocumentStore
 from haystack.nodes import TransformersReader,EmbeddingRetriever,BM25Retriever
 from .pipelines import SearchPipeline, ExtractiveQAPipeline
-from .routers import HealthRouter,PipelineRouter
+from .routers import HealthRouter,PipelineRouter,QueryRouter,DocumentRouter
 class Container(containers.DeclarativeContainer):
 
     config = providers.Configuration()
@@ -66,4 +66,18 @@ class Container(containers.DeclarativeContainer):
         PipelineRouter,
         search_pipeline=search_pipeline,
         extractive_qa_pipeline=extractive_qa_pipeline,
+    )
+    
+    query_router = providers.Factory(
+        QueryRouter,
+        document_store=document_store,
+        search_pipeline=search_pipeline,
+        extractive_qa_pipeline=extractive_qa_pipeline,
+        limiter=limiter,
+        embedding_retriever=embedding_retriever,
+    )
+    
+    document_router = providers.Factory(
+        DocumentRouter,
+        document_store=document_store
     )
