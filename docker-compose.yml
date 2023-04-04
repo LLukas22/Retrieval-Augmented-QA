@@ -32,21 +32,21 @@ services:
           devices:
             - capabilities: [gpu]
   #Streamlit ui to easily use the api
-  # haystack-ui:
-  #   build:
-  #     context: ./src
-  #     dockerfile: UI.Dockerfile
-  #   image: haystack-ui
-  #   container_name: haystack-ui
-  #   restart: unless-stopped
-  #   ports:
-  #     - "8501:8501"
-  #   environment:
-  #     - API_HOST=haystack-api
-  #   depends_on:
-  #     - haystack-api
-  #   networks:
-  #     - qa-network
+  streamlit-ui:
+    build:
+      context: ./src
+      dockerfile: UI.Dockerfile
+    image: streamlit-ui
+    container_name: streamlit-ui
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      - API_HOST=haystack-api
+    depends_on:
+      - haystack-api
+    networks:
+      - qa-network
   #Elasticsearch to use as a database for the API
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.5.1

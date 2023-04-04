@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union, Any
 import numpy as np
 import pandas as pd
 
@@ -19,11 +19,9 @@ BaseConfig.json_encoders = {np.ndarray: lambda x: x.tolist(), pd.DataFrame: lamb
 
 PrimitiveType = Union[str, int, float, bool]
 
-class RequestBaseModel(BaseModel):
-    class Config:
-        # Forbid any extra fields in the request to avoid silent failures
-        extra = Extra.forbid
-        
+class RequestBaseModel(BaseModel,extra=Extra.forbid,frozen=False):
+    pass
+              
 class SearchResponse(BaseModel):
     query: str
     answers: List[Answer] = []
@@ -31,8 +29,8 @@ class SearchResponse(BaseModel):
     debug: Optional[Dict] = Field(None, alias="_debug")
 
 class QueryRequest(RequestBaseModel):
-    query: str
-    params: Optional[dict] = None
+    query: str=Field(None,example="Who is the US president?")
+    params: Optional[Dict[str,Any]] = Field(None)
     debug: Optional[bool] = False
 
 class QAResponse(BaseModel):

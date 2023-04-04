@@ -43,11 +43,12 @@ faiss-gpu==1.7.2
 torch==2.0.0
 torchvision==0.15.1
 torchaudio==2.0.1
-git+https://github.com/huggingface/transformers@main#egg=transformers
+transformers==4.27.4
 accelerate==0.18.0
 peft==0.2.0 
 bitsandbytes==0.37.2
 sentence-transformers>=2.2.0
+#git+https://github.com/huggingface/transformers@main#egg=transformers
 
 #api dependencies
 fastapi

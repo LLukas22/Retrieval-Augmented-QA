@@ -11,7 +11,7 @@ import streamlit as st
 from ui.utils import sidebar_footer
 
 st.set_page_config(
-    page_title="Welcome",
+    page_title="Introduction",
     page_icon="👋",
 )
 
@@ -22,9 +22,6 @@ st.sidebar.success("Select a demo above.")
 sidebar_footer()
 st.markdown(
     """
-    Streamlit is an open-source app framework built specifically for
-    Machine Learning and Data Science projects.
-    **👈 Select a demo from the sidebar** to see some examples
-    of what Streamlit can do!
+    **👈 Select a demo from the sidebar** 
     """
 )

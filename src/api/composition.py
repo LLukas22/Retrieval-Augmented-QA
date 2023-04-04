@@ -43,6 +43,7 @@ class Container(containers.DeclarativeContainer):
         use_gpu=config.use_gpu,
         use_auth_token=config.hf_token,
         max_seq_len=512,
+        context_window_size=150,
     )
     
     search_pipeline = providers.Singleton(
