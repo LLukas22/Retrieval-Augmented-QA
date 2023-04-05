@@ -48,7 +48,12 @@ accelerate==0.18.0
 peft==0.2.0 
 bitsandbytes==0.37.2
 sentence-transformers>=2.2.0
+huggingface_hub
 #git+https://github.com/huggingface/transformers@main#egg=transformers
+#git+https://github.com/nomic-ai/pyllamacpp@main#egg=pyllamacpp
+
+
+
 
 #api dependencies
 fastapi

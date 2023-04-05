@@ -4,7 +4,8 @@ from .routers.utils import RequestLimiter
 from haystack.document_stores import ElasticsearchDocumentStore
 from haystack.nodes import TransformersReader,EmbeddingRetriever,BM25Retriever
 from .pipelines import SearchPipeline, ExtractiveQAPipeline
-from .routers import HealthRouter,PipelineRouter,QueryRouter,DocumentRouter
+from .routers import HealthRouter,PipelineRouter,QueryRouter,DocumentRouter,ChatRouter
+from .chat_models import adapter_factory
 class Container(containers.DeclarativeContainer):
 
     config = providers.Configuration()
@@ -82,3 +83,16 @@ class Container(containers.DeclarativeContainer):
         DocumentRouter,
         document_store=document_store
     )
+    
+    chatmodel=providers.Singleton(
+        adapter_factory,
+        configuration=config
+    )
+    
+    chat_router = providers.Factory(
+        ChatRouter,
+        chat_model=chatmodel,
+        limiter=limiter
+    )
+    
+    

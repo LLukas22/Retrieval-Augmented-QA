@@ -18,7 +18,7 @@ logging.getLogger("haystack").setLevel(logging.INFO)
 from dependency_injector.wiring import Provide, inject
 
 from api.composition import Container
-from api.routers import HealthRouter,PipelineRouter,QueryRouter,DocumentRouter
+from api.routers import HealthRouter,PipelineRouter,QueryRouter,DocumentRouter,ChatRouter
 from api.errors.http_error import http_error_handler
 
 from fastapi import FastAPI, HTTPException, APIRouter
@@ -32,13 +32,20 @@ def parse_bool(value:str)->bool:
     else:
         return bool(value)
 
+def parse_chatmodel(value:str)->bool:
+    value = value.upper()
+    if value not in ("GPU","CPU","OPENAI"):
+        raise ValueError("Invalid value for CHATMODEL. Valid values are: GPU, CPU, OPENAI")
+    return value
+    
 @inject
 def App(
     container:Container,
     health_router:HealthRouter=Provide[Container.health_router],
     pipeline_router:PipelineRouter=Provide[Container.pipeline_router],
     document_router:DocumentRouter=Provide[Container.document_router],
-    query_router:QueryRouter=Provide[Container.query_router]
+    query_router:QueryRouter=Provide[Container.query_router],
+    chat_router:ChatRouter=Provide[Container.chat_router],
     ):
     
     from haystack import __version__ as haystack_version
@@ -52,10 +59,10 @@ def App(
        
     router = APIRouter()
     router.include_router(query_router.router)
+    router.include_router(chat_router.router)
     router.include_router(health_router.router)
     router.include_router(pipeline_router.router)
     router.include_router(document_router.router)
-     
     app.include_router(router)
     return app
         
@@ -63,7 +70,6 @@ def App(
 if __name__ == "__main__":
     container = Container()
     container.config.hf_token.from_env("HUGGINGFACE_TOKEN")
-    container.config.open_ai_token.from_env("OPENAI_TOKEN")
     container.config.elasticsearch_host.from_env("ELASTICSEARCH_HOST",default="localhost")
     container.config.elasticsearch_port.from_env("ELASTICSEARCH_PORT",as_=int,default=9200)
     container.config.elasticsearch_user.from_env("ELASTICSEARCH_USER",default="")
@@ -76,6 +82,25 @@ if __name__ == "__main__":
     container.config.use_8bit.from_env("USE_8BIT",as_=parse_bool,default=False)
     container.config.concurency_limit.from_env("CONCURENCY_LIMIT",as_=int,default=5)
     container.config.debug.from_env("DEBUG",as_=parse_bool,default=True)
+    
+    container.config.chatmodel.from_env("CHATMODEL",as_=parse_chatmodel,default="GPU")
+    container.config.chat_max_length.from_env("CHAT_MAX_INPUT_LENGTH",as_=int,default=2000)
+    
+    #OpenAI Vars
+    container.config.open_ai_token.from_env("OPENAI_TOKEN",default=None)
+    
+    #GPU Vars
+    container.config.base_chat_model.from_env("BASE_CHAT_MODEL",default="decapoda-research/llama-7b-hf")
+    container.config.use_peft.from_env("USE_PEFT",as_=parse_bool,default=True)
+    container.config.adapter_chat_model.from_env("ADAPTER_CHAT_MODEL",default="nomic-ai/gpt4all-lora")
+    container.config.chat_apply_optimizations.from_env("ADAPTER_APPLY_OPTIMIZATIONS",as_=parse_bool,default=True)
+    
+    #CPU Vars
+    container.config.cpu_model_cache_dir.from_env("CPU_MODEL_CACHE_DIR",default="./cpu_model_cache")
+    container.config.cpu_model_threads.from_env("CPU_MODEL_THREADS",as_=int,default=8)
+    
+    
+    
     container.wire(modules=[__name__])
     
    
