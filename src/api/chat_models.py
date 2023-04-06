@@ -1,6 +1,7 @@
-from typing import Dict,List
+from typing import Dict,List,Generator
 import openai
 from transformers import GenerationConfig
+from transformers.generation import TextStreamer
 from peft import PeftModel
 from pyllamacpp.model import Model
 from pathlib import Path
@@ -14,6 +15,8 @@ from sentencepiece import SentencePieceProcessor
 import os
 from dependency_injector.providers import Configuration  
 from schemas.chat import ChatMessage
+from .routers.utils import generator_from_callback,GeneratorStreamer
+import threading
 
 CAN_RUN_LLAMA = False
 try:
@@ -28,6 +31,10 @@ class ModelAdapter(ABC):
     
     @abstractmethod
     def generate(self,messages:List[ChatMessage],generationConfig:GenerationConfig)->str:
+        pass
+    
+    @abstractmethod
+    def generate_streaming(self,messages:List[ChatMessage],generationConfig:GenerationConfig)->Generator[str,None,None]:
         pass
     
     @abstractmethod
@@ -69,14 +76,39 @@ class ChatGPT_Adapter(ModelAdapter):
         
         return result['choices'][0]['message']['content']
     
+    def generate_streaming(self,messages:List[ChatMessage],generationConfig:GenerationConfig)->Generator[str,None,None]:
+        transformed_messages = [m.dict() for m in messages]
+        tokens_of_request=0
+        for result in openai.ChatCompletion.create(
+                    model="gpt-3.5-turbo",
+                    messages=transformed_messages,
+                    temperature=generationConfig.temperature,
+                    top_p=generationConfig.top_p,
+                    stream=True
+                    ):
+            
+            delta = result['choices'][0]['delta']
+            if "role" in delta:
+                continue
+            elif "content" in delta:
+                yield delta['content']
+            else:
+                break
+            
+        self.total_tokens += tokens_of_request
+        logging.info(f"OpenAI: Used {tokens_of_request} Tokens! Accumulated costs: ({(self.total_tokens/1000)*0.002}$)")
     
 def build_llm_prompt(messages:List[ChatMessage])->str:
     prompt=""
+    
     for message in messages:
-        prompt += f"{message.role}:\"{message.content}\"\n"
+        if message.role == "system":
+            prompt += message.content
+        else:
+            prompt += f"<{message.role}>:\"{message.content}\"\n"
         
     if  messages[-1].role == "user":
-        prompt += "assistant:"
+        prompt += "<assistant>:"
     return prompt
     
 class HF_Gpu_Adapter(ModelAdapter):
@@ -136,6 +168,27 @@ class HF_Gpu_Adapter(ModelAdapter):
             generated_tokens = generation_output.sequences[0]
             generated_text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
         return generated_text[len(prompt):]
+    
+    def generate_streaming(self,messages:List[ChatMessage],generationConfig:GenerationConfig)->Generator[str,None,None]:
+        
+        prompt=build_llm_prompt(messages)
+        streamer = GeneratorStreamer(self.tokenizer,prompt)
+        
+        
+        with torch.no_grad():
+            input = self.tokenizer(prompt, return_tensors="pt")
+            input_ids = input["input_ids"].to("cuda")
+            thread = threading.Thread(target=self.model.generate,
+                    kwargs={
+                        "input_ids":input_ids,
+                        "generation_config":generationConfig,
+                        "streamer":streamer              
+                    })
+            thread.start()
+            #thread.join()
+            # generated_tokens = generation_output.sequences[0]
+            # generated_text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+        yield from streamer
     
 class Cpu_Adapter(ModelAdapter): 
     def __init__(self,model_directory:str,max_length:int=2000,threads:int=8) -> None:
@@ -206,7 +259,18 @@ class Cpu_Adapter(ModelAdapter):
                                    temp=generationConfig.temperature,
                                    )
         return generated_text[len(prompt):]
-
+    
+    def generate_streaming(self,messages:List[ChatMessage],generationConfig:GenerationConfig)->Generator[str,None,None]:
+        prompt=build_llm_prompt(messages)
+        
+        return generator_from_callback(lambda c: self.model.generate(prompt,
+                            new_text_callback=c,
+                            n_predict=generationConfig.max_new_tokens,
+                            n_threads=self.threads,
+                            top_k=generationConfig.top_k,
+                            top_p=generationConfig.top_p,
+                            temp=generationConfig.temperature,
+                            ))
 
         
 def adapter_factory(configuration:Configuration)->ModelAdapter:

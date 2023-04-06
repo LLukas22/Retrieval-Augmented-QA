@@ -9,6 +9,7 @@ if root not in sys.path:
     
 import logging
 import uvicorn
+import transformers
 
 logging.basicConfig(format="%(asctime)s %(message)s", datefmt="%m/%d/%Y %I:%M:%S %p")
 logger = logging.getLogger(__name__)

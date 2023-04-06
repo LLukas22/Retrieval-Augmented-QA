@@ -1,4 +1,4 @@
-from typing import Optional,Any,Type
+from typing import Optional,Any,Type,Generator,List,Dict
 import os
 
 
@@ -11,7 +11,7 @@ import pydantic
 from schemas.health import HealthResponse
 from schemas.pipelines import PipelinesResponse
 from schemas.query import QAResponse,SearchResponse,QueryRequest,ReindexRequest
-
+from schemas.chat import ChatResponse,ChatRequest,ChatMessage
     
 class ApiConnector():
     def __init__(self) -> None:
@@ -127,6 +127,16 @@ class ApiConnector():
             logging.exception(e)
         return None
         
+    def chat_streaming(self,messages:List[ChatMessage],config:Dict[str,Any]=None)->Generator[str,None,None]:
+        url="/chat/prompt_streaming"
+        request = ChatRequest(messages=messages,config=None)
+        try:
+            with self.client.stream("POST",url,json=request.dict()) as response:
+                for line in response.iter_lines():
+                    yield line
+                    
+        except Exception as e:
+            logging.exception(e)
             
 
 st.cache_resource
