@@ -14,13 +14,19 @@ services:
       - HAYSTACK_TELEMETRY_ENABLED=false
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
-      - PRELOAD_MODELS=true
       - USE_GPU=true
       - HUGGINGFACE_TOKEN=${HF_TOKEN}
-      - OPENAI_TOKEN=${HF_TOKEN}
+      - OPENAI_TOKEN=${OPENAI_TOKEN}
+      - CHATMODEL=CPU
+
+      #CPU Specific Options
+      - CPU_MODEL_CACHE_DIR=/huggingface/ccp
+      - CPU_MODEL_THREADS=8
+
     #cache model downloads over restarts
     volumes:
       - ./huggingface_cache:/huggingface/cache
+      - ./huggingface_cache/cpp:/huggingface/ccp
     depends_on:
       - elasticsearch
     networks:

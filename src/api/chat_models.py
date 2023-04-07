@@ -1,7 +1,8 @@
-from typing import Dict,List,Generator
+from typing import Dict,List,Generator,Type
 import openai
 from transformers import GenerationConfig
-from transformers.generation import TextStreamer
+from transformers.generation.stopping_criteria import StoppingCriteriaList
+
 from peft import PeftModel
 from pyllamacpp.model import Model
 from pathlib import Path
@@ -15,11 +16,12 @@ from sentencepiece import SentencePieceProcessor
 import os
 from dependency_injector.providers import Configuration  
 from schemas.chat import ChatMessage
-from .routers.utils import generator_from_callback,GeneratorStreamer
+from .model_utils import generator_from_callback,GeneratorStreamer,ManualStopCondition
 import threading
 
 CAN_RUN_LLAMA = False
 try:
+    from transformers import AutoModel,AutoTokenizer,AutoModelForCausalLM
     from transformers import LlamaForCausalLM,LlamaTokenizer
     CAN_RUN_LLAMA=True
 except:
@@ -112,13 +114,25 @@ def build_llm_prompt(messages:List[ChatMessage])->str:
     return prompt
     
 class HF_Gpu_Adapter(ModelAdapter):
-    def __init__(self,base_model:str,use_peft:bool,adapter_model:str,use_8bit:bool,apply_optimications:bool,max_length:int=2000) -> None:
+    def __init__(self,base_model:str,
+                 use_peft:bool,
+                 adapter_model:str,
+                 use_8bit:bool,
+                 apply_optimications:bool,
+                 max_length:int=2000,
+                 model_prototype:Type[AutoModel]=LlamaForCausalLM,
+                 tokenizer_prototype:Type[AutoTokenizer]=LlamaTokenizer,
+                 stopwords:List[str]=["<user>","<user>:","user:"]) -> None:
         self.base_model = base_model
         self.use_peft = use_peft
         self.adapter_model = adapter_model
         self.use_8bit = use_8bit
         self.apply_optimications = apply_optimications
         self.max_length = max_length
+        self.model_prototype = model_prototype
+        self.tokenizer_prototype = tokenizer_prototype
+        self.stopwords = stopwords
+        self.stop_reason = None
         
         if not torch.cuda.is_available():
             raise Exception("No GPU available! Please use the CPU or OpenAI models!")
@@ -137,7 +151,7 @@ class HF_Gpu_Adapter(ModelAdapter):
         if self.apply_optimications:
             self.apply_optimizations()
             
-        self.model = LlamaForCausalLM.from_pretrained(self.base_model,
+        self.model = self.model_prototype.from_pretrained(self.base_model,
                                                       torch_dtype=torch.float16,
                                                       device_map="auto",
                                                       load_in_8bit=self.use_8bit)
@@ -150,12 +164,16 @@ class HF_Gpu_Adapter(ModelAdapter):
         if self.apply_optimications:
             self.model = torch.compile(self.model,mode="max-autotune")
             
-        self.tokenizer = LlamaTokenizer.from_pretrained(self.base_model)
+        self.tokenizer = self.tokenizer_prototype.from_pretrained(self.base_model)
         self.tokenizer.max_length = self.max_length
             
             
     def generate(self,messages:List[Dict[str,str]],generationConfig:GenerationConfig)->str:
         prompt=build_llm_prompt(messages)
+        #These are only used here for the stopword detection
+        manual_stop = ManualStopCondition()
+        streamer = GeneratorStreamer(self.tokenizer,manual_stop,stop_words=self.stopwords)
+        
         with torch.no_grad():
             input = self.tokenizer(prompt, return_tensors="pt")
             input_ids = input["input_ids"].to("cuda")
@@ -164,17 +182,26 @@ class HF_Gpu_Adapter(ModelAdapter):
                     generation_config=generationConfig,
                     return_dict_in_generate=True,
                     output_scores=False,
+                    streamer=streamer,
+                    stopping_criteria=StoppingCriteriaList([manual_stop])    
                 )
             generated_tokens = generation_output.sequences[0]
             generated_text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+            
+        if manual_stop.should_stop.is_set():
+            self.stop_reason="Stopword detected!"
+        else:
+            self.stop_reason="Max Tokens!"
+            
         return generated_text[len(prompt):]
     
     def generate_streaming(self,messages:List[ChatMessage],generationConfig:GenerationConfig)->Generator[str,None,None]:
         
         prompt=build_llm_prompt(messages)
-        streamer = GeneratorStreamer(self.tokenizer,prompt)
+        manual_stop = ManualStopCondition()
+        streamer = GeneratorStreamer(self.tokenizer,manual_stop,stop_words=self.stopwords)
         
-        
+        self.model.generate()
         with torch.no_grad():
             input = self.tokenizer(prompt, return_tensors="pt")
             input_ids = input["input_ids"].to("cuda")
@@ -182,13 +209,17 @@ class HF_Gpu_Adapter(ModelAdapter):
                     kwargs={
                         "input_ids":input_ids,
                         "generation_config":generationConfig,
-                        "streamer":streamer              
-                    })
+                        "streamer":streamer,
+                        "stopping_criteria":StoppingCriteriaList([manual_stop])              
+                    },
+                    daemon=True)
             thread.start()
-            #thread.join()
-            # generated_tokens = generation_output.sequences[0]
-            # generated_text = self.tokenizer.decode(generated_tokens, skip_special_tokens=True)
         yield from streamer
+        
+        if manual_stop.should_stop.is_set():
+            self.stop_reason="Stopword detected!"
+        else:
+            self.stop_reason="Max Tokens!"
     
 class Cpu_Adapter(ModelAdapter): 
     def __init__(self,model_directory:str,max_length:int=2000,threads:int=8) -> None:
