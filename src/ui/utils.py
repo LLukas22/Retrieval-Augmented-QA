@@ -1,8 +1,9 @@
 from typing import List, Dict, Any, Tuple, Optional
 import streamlit as st
-from ui.api_connector import get_api_connector,ApiConnector
+from ui.api_connector import get_api_connector
 from annotated_text import annotation,annotated_text
 from haystack.schema import Answer,Document
+from schemas.chat import DefaultConfigResponse
 
 def sidebar_footer()->None:
     connector = get_api_connector()
@@ -54,7 +55,8 @@ def get_wikipedia_url_from_title(title:str)->str:
 
 
 def show_answer(answer:Answer,documents:List[Document]):
-    highlight_color =  "#023020"
+    highlight_color =  "#024d10#"#"#023020"
+    background_color = "#0f1212"
     score =  round(answer.score*100,2)
     st.write(f"### Answer:\"{answer.answer}\" (Score: {score}%)")
     
@@ -62,7 +64,7 @@ def show_answer(answer:Answer,documents:List[Document]):
     
     st.write("**Context:**")
     annotated_text(answer.context[:offsets_in_context.start],
-        (answer.answer, f"ANSWER ({score}%)", highlight_color),
+        (answer.answer, f"ANSWER ({score}%)",background_color ,highlight_color),
         answer.context[offsets_in_context.end:])
     
     title=None
@@ -105,3 +107,41 @@ def show_answer(answer:Answer,documents:List[Document]):
         
     st.markdown(f"#### Source: {source_display}") 
     st.markdown('----')
+    
+    
+def set_default_generation_config(config:Optional[DefaultConfigResponse]):
+    generation_config = config.config if config else {}
+    if "temperature" in generation_config:
+        set_state_if_absent("temperature",float(generation_config["temperature"]))
+    else:
+        set_state_if_absent("temperature",1.0)
+        
+    if "top_p" in generation_config:
+        set_state_if_absent("top_p",float(generation_config["top_p"]))
+    else:
+        set_state_if_absent("top_p",1.0)
+        
+    if "max_new_tokens" in generation_config:
+        set_state_if_absent("max_new_tokens",generation_config["max_new_tokens"])
+    else:
+         set_state_if_absent("max_new_tokens",256)
+    
+    if "top_k" in generation_config:
+        set_state_if_absent("top_k",generation_config["top_k"])
+    else:
+        set_state_if_absent("top_k",50)
+        
+    if "repetition_penalty" in generation_config:
+        set_state_if_absent("repetition_penalty",float(generation_config["repetition_penalty"]))
+    else:
+        set_state_if_absent("repetition_penalty",1.0)
+        
+        
+def get_generation_config()->Dict[str,Any]:
+    return {
+             "temperature":st.session_state["temperature"],
+             "top_p":st.session_state["top_p"],
+             "max_new_tokens":st.session_state["max_new_tokens"],
+             "top_k":st.session_state["top_k"],
+             "repetition_penalty":st.session_state["repetition_penalty"]
+        }

@@ -11,7 +11,7 @@ import pydantic
 from schemas.health import HealthResponse
 from schemas.pipelines import PipelinesResponse
 from schemas.query import QAResponse,SearchResponse,QueryRequest,ReindexRequest
-from schemas.chat import ChatResponse,ChatRequest,ChatMessage
+from schemas.chat import ChatResponse,ChatRequest,ChatMessage,ModelInfo,DefaultConfigResponse
     
 class ApiConnector():
     def __init__(self) -> None:
@@ -60,6 +60,7 @@ class ApiConnector():
             sleep(0.5)  # To avoid spamming a non-existing endpoint at startup
         return False
     
+    st.cache_data
     def versions(self)->dict[str,str]:
         url = "/health/version"
         try:
@@ -78,7 +79,7 @@ class ApiConnector():
             logging.exception(e)
         return None
     
-        
+    st.cache_data    
     def pipelines(self)->Optional[PipelinesResponse]:
         url = "/pipeline/pipelines"
         try:
@@ -127,16 +128,46 @@ class ApiConnector():
             logging.exception(e)
         return None
         
-    def chat_streaming(self,messages:List[ChatMessage],config:Dict[str,Any]=None)->Generator[str,None,None]:
+    def chat_streaming(self,messages:List[ChatMessage],config:Dict[str,Any]=None,stop_words:List[str]=[])->Generator[str,None,None]:
         url="/chat/prompt_streaming"
-        request = ChatRequest(messages=messages,config=None)
+        request = ChatRequest(messages=messages,config=config,stop_words=stop_words)
         try:
-            with self.client.stream("POST",url,json=request.dict()) as response:
-                for line in response.iter_lines():
+            with self.client.stream("POST",url,json=request.dict(),timeout=None) as response:
+                for line in response.iter_text():
                     yield line
                     
         except Exception as e:
             logging.exception(e)
+    
+    st.cache_data        
+    def chat_info(self)->Optional[ModelInfo]:
+        url="/chat/info"
+        try:
+            result = self.__get(url)
+            return self.__parse_response(result,ModelInfo)
+        except Exception as e:
+            logging.exception(e)
+        return None
+    
+    st.cache_data
+    def chat_default_config(self)->Optional[DefaultConfigResponse]:
+        url="/chat/default_config"
+        try:
+            result = self.__get(url)
+            return self.__parse_response(result,DefaultConfigResponse)
+        except Exception as e:
+            logging.exception(e)
+        return None
+    
+    def chat_is_ready(self)->bool:
+        url="/chat/availability"
+        try:
+            result = self.__get(url)
+            return result.json()
+        except Exception as e:
+            logging.exception(e)
+        return False
+            
             
 
 st.cache_resource

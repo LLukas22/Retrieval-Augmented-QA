@@ -49,8 +49,7 @@ bitsandbytes==0.37.2
 sentence-transformers>=2.2.0
 huggingface_hub
 git+https://github.com/huggingface/transformers@a17841ac4945631e4e13c072fa2a329b98ebb8b6#egg=transformers
-pyllamacpp
-#git+https://github.com/nomic-ai/pyllamacpp@main#egg=pyllamacpp
+llama-cpp-python
 
 
 

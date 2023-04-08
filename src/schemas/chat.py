@@ -9,6 +9,16 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: List[ChatMessage] = Field(..., description="The messages to be used for the chat")
     config:Optional[Dict[str,Any]] = Field(None,description="The generation config to use for the chat. Dictionary of a transfomers GenerationConfig")
+    stop_words:Optional[List[str]] = Field(None,description="The stop words to use for the chat")
     
 class ChatResponse(BaseModel):
     content: str = Field(..., description="The generated response")
+    
+    
+class DefaultConfigResponse(BaseModel):
+    config:Dict[str,Any] = Field(...,description="The default generation config of the chat model")
+    
+class ModelInfo(BaseModel):
+    name: str = Field(..., description="The name of the adapter")
+    model: str = Field(..., description="The description of the model")
+    accelerator: str = Field(..., description="The accelerator used for the model")

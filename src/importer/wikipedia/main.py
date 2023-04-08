@@ -19,11 +19,10 @@ if __name__ == "__main__":
     elatic_host = os.getenv("ELASTIC_HOST","localhost")
     elastic_port = os.getenv("ELASTIC_PORT",9200)
     dim = os.getenv("ELASTIC_EMBEDDING_DIM",384)
-    
+    cache_dir = Path(os.getenv("CACHE_DIR","./importer_cache"))
     
     url="https://dumps.wikimedia.org/simplewiki/20230401/simplewiki-20230401-pages-articles-multistream.xml.bz2" 
     filename = url.split("/")[-1]
-    cache_dir = Path(__file__).parent / "cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
     pages_dir  = cache_dir /  "pages"
     document_dir  = cache_dir /  "documents"
@@ -58,7 +57,7 @@ if __name__ == "__main__":
 
     #Load pages and create documents
     if not os.path.exists(document_dir):
-        page_file = list(pages_dir.iterdir())[:5000]
+        page_file = list(pages_dir.iterdir())
         
         
         def clean_sample(path)->Document:

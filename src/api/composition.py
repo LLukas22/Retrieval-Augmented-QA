@@ -84,6 +84,11 @@ class Container(containers.DeclarativeContainer):
         document_store=document_store
     )
     
+    chat_limiter=providers.Singleton(
+        RequestLimiter,
+        limit=2
+    )
+        
     chatmodel=providers.Singleton(
         adapter_factory,
         configuration=config
@@ -92,7 +97,7 @@ class Container(containers.DeclarativeContainer):
     chat_router = providers.Factory(
         ChatRouter,
         chat_model=chatmodel,
-        limiter=limiter
+        limiter=chat_limiter
     )
     
     

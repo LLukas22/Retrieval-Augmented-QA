@@ -19,10 +19,6 @@ WORKDIR /app
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install -r ./api/requirements.txt
 #This is done to use newer version of pytorch and transformers
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install --no-deps farm-haystack 
-#get transformers fresh from source
-#RUN --mount=type=cache,target=/root/.cache/pip pip3 install transformers git+https://github.com/huggingface/transformers
-#build pyllamacpp from source
-#RUN --mount=type=cache,target=/root/.cache/pip pip3 install pyllamacpp git+https://github.com/nomic-ai/pyllamacpp
 
 ENV PYTHONPATH "${PYTHONPATH}:/app"
 

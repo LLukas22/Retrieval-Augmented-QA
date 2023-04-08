@@ -43,15 +43,15 @@ def test_gpu_model_does_not_act_as_user():
     
     gpu_adapter = HF_Gpu_Adapter("decapoda-research/llama-7b-hf",
                                  True,
-                                 adapter_model="nomic-ai/gpt4all-lora",
+                                 adapter_model="tloen/alpaca-lora-7b",
                                  use_8bit=False,
                                  max_length=1024,
                                  apply_optimications=False)
     gpu_adapter.load()
     
     messages=[
-        ChatMessage(role="system",content="You are a helpful assistant. Answer the questions of the user."),
-        ChatMessage(role="user",content="What are you?"),
+        ChatMessage(role="system",content="The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know. \n\n Current Conversation:"),
+        ChatMessage(role="user",content="What is your task?"),
               ]
     
     iterations = 0
@@ -65,24 +65,26 @@ def test_gpu_model_does_not_act_as_user():
         
     assert iterations>1
     assert len(generated_message)>0
-    assert "<user>:" not in generated_message
+    assert "Human:" not in generated_message
     assert gpu_adapter.stop_reason=="Stopword detected!"
     
     
 def test_cpu_model_can_stream():
-    model_dir = os.getenv("CPU_MODEL_CACHE_DIR","./huggingface_cache/cpp")
-    cpu_adapter = Cpu_Adapter(model_dir)
+    cpu_adapter = Cpu_Adapter()
     cpu_adapter.load()
     
-    prompt = "The meaning of life is"
+    prompt = "User: How are you doing?\nBot:"
     messages=[ChatMessage(role="system",content=prompt)]
+    config = cpu_adapter.default_config()
+    config.max_new_tokens=200
+    stream=cpu_adapter.generate_streaming(messages,config) 
+    
     iterations = 0
-    config = GenerationConfig(max_new_tokens=50)
     generated_message=""
-    for i,word in enumerate(cpu_adapter.generate_streaming(messages,config)):
-        iterations+=1
+    for i,word in enumerate(stream):
         generated_message+=word
-        
-    assert iterations>1
+        iterations+=1
+       
+    assert iterations>1 
     assert len(generated_message)>0
     assert not generated_message.startswith(prompt)

@@ -11,10 +11,8 @@ import logging
 from json import JSONDecodeError
 
 import streamlit as st
-from annotated_text import annotation,annotated_text
-from markdown import markdown
 
-from ui.utils import show_answer,sidebar_footer, set_state_if_absent, get_wikipedia_url_from_title
+from ui.utils import show_answer,sidebar_footer, set_state_if_absent
 from ui.api_connector import get_api_connector
 from haystack.schema import Answer,Document
 

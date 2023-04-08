@@ -81,34 +81,27 @@ def render():
         max_value=20,
         value=6,
         step=2,
-        on_change=reset_results,
     )
     
     sidebar_footer()
     
-    query = st.text_input(
+    form = st.form(key="search_form")
+    form.write("### 📝 Enter your query")
+    query = form.text_input(
         value=st.session_state.search_query,
-        max_chars=150,
-        on_change=reset_results,
+        max_chars=200,
         label="search_query",
         label_visibility="hidden",
     )
-    
-    # Run button
-    run_pressed = st.button("Run")
-    run_query = (
-        run_pressed or query != st.session_state.search_query
-    )
-    
-    # Check the connection
-    with st.spinner("⌛️ &nbsp;&nbsp; API is starting..."):
+    run_pressed = form.form_submit_button("Run")
+
+    # Get results for query
+    if run_pressed and query != "" and query != st.session_state.search_query:
+        
         if not connetor.healtcheck():
             st.error("🚫 &nbsp;&nbsp; Connection Error. Is the API running?")
-            run_query = False
-            reset_results()
-            
-    # Get results for query
-    if run_query and query != "":
+            return
+        
         reset_results()
         st.session_state["query"] = query
         with st.spinner("🧠 &nbsp;&nbsp; Performing semantic search on documents..."):
@@ -135,13 +128,16 @@ def render():
                     bm_25_docs = [doc for doc in docs if doc.meta['retriever'] == 'BM25']
                     semantic_docs = [doc for doc in docs if doc.meta['retriever'] != 'BM25']
                     semantic_column, lexical_column = st.columns(2,gap="medium")
-                    semantic_column.header("Semantic Results")
-                    lexical_column.header("Lexical Results")
+                    semantic_column.header("🧠Semantic Results")
+                    lexical_column.header("📖Lexical Results")
                     
-                    for doc in semantic_docs:
-                        write_document(doc,semantic_column)
-                    for doc in bm_25_docs:
-                        write_document(doc,lexical_column)
+                    try:
+                        for doc in semantic_docs:
+                            write_document(doc,semantic_column)
+                        for doc in bm_25_docs:
+                            write_document(doc,lexical_column)
+                    except Exception as e:
+                        st.exception(e)
                     
                 else:   
                     results_column = st.columns(1,gap="small")
