@@ -28,5 +28,5 @@ jobs:
       
       - name: 'Build and push Docker image'
         run: |
-          docker build ./src --file UI.Dockerfile --tag ghcr.io/llukas22/retrieval-qa-ui:latest
+          docker build ./src --file ./src/UI.Dockerfile --tag ghcr.io/llukas22/retrieval-qa-ui:latest
           docker push ghcr.io/llukas22/retrieval-qa-ui:latest
