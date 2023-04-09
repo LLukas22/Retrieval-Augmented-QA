@@ -38,4 +38,4 @@ jobs:
           context: ./src
           push: true
           file: ./src/UI.Dockerfile
-          tags: llukas22/retrieval-qa-ui:latest
+          tags: ghcr.io/llukas22/retrieval-qa-ui:latest
