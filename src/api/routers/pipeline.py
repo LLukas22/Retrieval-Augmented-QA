@@ -4,6 +4,7 @@ from ._router import BaseRouter
 from schemas.pipelines import PipelineDescription,PipelinesResponse,ComponentDescription,PrimitiveType
 import haystack
 from networkx.drawing.nx_agraph import to_agraph
+import os
 
 class PipelineRouter(BaseRouter):
     def __init__(self,search_pipeline:CustomPipeline,extractive_qa_pipeline:CustomPipeline):
@@ -19,6 +20,8 @@ class PipelineRouter(BaseRouter):
         Lists the pipelines of this node and generates a DOT-Graph for each pipeline
         """
         pipelines = PipelinesResponse(pipelines=[])
+        hf_token = os.getenv("HUGGINGFACE_TOKEN",None)
+        open_ai_token = os.getenv("OPENAI_TOKEN",None)
         
         def process_pipeline(name:str,pipeline:haystack.Pipeline)->PipelineDescription:
             components = []
@@ -29,6 +32,13 @@ class PipelineRouter(BaseRouter):
                 
                 componentDescription=ComponentDescription(name=component_name,params={})
                 for key,value in component.get_params(return_defaults=True).items():
+                    if isinstance(value,str):
+                        #Don't leak the api keys
+                        if hf_token and hf_token in value:
+                            value = value.replace(hf_token,"HUGGINGFACE_TOKEN")
+                        if open_ai_token and open_ai_token in value:
+                            value = value.replace(open_ai_token,"OPENAI_TOKEN")
+                            
                     if isinstance(value,PrimitiveType):
                         componentDescription.params[key]=value
                 components.append(componentDescription)

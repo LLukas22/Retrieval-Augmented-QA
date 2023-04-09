@@ -89,10 +89,10 @@ class ApiConnector():
             logging.exception(e)
         return None
     
-    def reindex(self)->bool:
+    def reindex(self,update_existing_embeddings:bool=False)->bool:
         url = "/query/reindex"
         try:
-            request = ReindexRequest(update_existing_embeddings=False)
+            request = ReindexRequest(update_existing_embeddings=update_existing_embeddings)
             result = self.__post(url,json=request.dict(),timeout=None)
             if result:
                 return True    

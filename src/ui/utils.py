@@ -137,11 +137,11 @@ def set_default_generation_config(config:Optional[DefaultConfigResponse]):
         set_state_if_absent("repetition_penalty",1.0)
         
         
-def get_generation_config()->Dict[str,Any]:
+def get_generation_config(temperature,top_p,max_new_tokens,repetition_penalty)->Dict[str,Any]:
     return {
-             "temperature":st.session_state["temperature"],
-             "top_p":st.session_state["top_p"],
-             "max_new_tokens":st.session_state["max_new_tokens"],
-             "top_k":st.session_state["top_k"],
-             "repetition_penalty":st.session_state["repetition_penalty"]
+             "temperature":temperature,
+             "top_p":top_p,
+             "max_new_tokens":max_new_tokens,
+             "top_k":st.session_state.top_k,
+             "repetition_penalty":repetition_penalty
         }

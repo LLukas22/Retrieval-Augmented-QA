@@ -17,9 +17,14 @@ st.set_page_config(page_title="Admin", page_icon="🖥️", layout="wide")
 
 def render():
     connector = get_api_connector()
+    enabled = os.getenv("ENABLE_ADMIN",False)
     
     st.title("🖥️  Admin area")
     sidebar_footer()
+    
+    if not enabled:
+        st.warning("Sorry but the admin area is disabled. You can enable it by setting the environment variable `ENABLE_ADMIN` to `True`.🧐")
+        return 
     st.write(
         """Here are some information about the system and the modules. If you dont know what you are doing better dont touch anything here.🧐"""
     )
@@ -53,12 +58,13 @@ def render():
          
     st.write("## ✳️Embeddings")
     st.text("Recalculate all embeddings in the database.⚠️ If the node is not GPU accelerated this could take some time!")
+    update_all_embeddings = st.checkbox(value=False,label="Recalculate all embeddings")
     should_update_embeddings = st.button("↻ Update Embeddings")
 
     result=None
     with st.spinner("⌛️ &nbsp;&nbsp; Embeddings are updating..."):
         if should_update_embeddings:
-            result = connector.reindex()
+            result = connector.reindex(update_all_embeddings)
     if result:
         st.write("👀 Updated Embeddings sucessfully!")
 

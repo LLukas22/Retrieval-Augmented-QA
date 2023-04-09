@@ -33,8 +33,8 @@ def render():
     st.sidebar.header("❓Extractive QA")
     st.markdown(
         """
-    This demo takes its data from a scraped game of thrones wiki.
-
+    This demo searches the documents in the document store.
+    
     Ask any question on this topic and see if Haystack can find the correct answer to your query!
     """,
         unsafe_allow_html=True,
@@ -68,21 +68,19 @@ def render():
             reset_results() 
             
     # Search bar
-    query = st.text_input(
+    form = st.form(key="qa_form")
+    form.write("### 📝 Enter your query")
+    query = form.text_input(
         value=st.session_state["qa_query"],
         max_chars=100,
-        on_change=reset_results,
         label="qa_query",
         label_visibility="hidden",
     )
     # Run button
-    run_pressed = st.button("Run")
-    run_query = (
-        run_pressed or query != st.session_state.qa_query
-    )
+    run_pressed = form.form_submit_button("Run")
     
     # Get results for query
-    if run_query and query != "":
+    if run_pressed and query != "" and query != st.session_state.qa_query:
         reset_results()
         st.session_state.qa_query = query
         with st.spinner("🧠 &nbsp;&nbsp; Performing neural search on documents..."):

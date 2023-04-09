@@ -15,7 +15,7 @@ services:
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
       - USE_GPU=false
-      - HUGGINGFACE_TOKEN=${HF_TOKEN}
+      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
       - OPENAI_TOKEN=${OPENAI_TOKEN}
       - CHATMODEL=GPU     #OPENAI, GPU or CPU
 
@@ -47,6 +47,7 @@ services:
       - "8501:8501"
     environment:
       - API_HOST=haystack-api
+      - ENABLE_ADMIN=true
     depends_on:
       - haystack-api
     networks:
