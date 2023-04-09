@@ -21,7 +21,11 @@
             "justMyCode": false,
             "args": [
                 "run",
-                "${file}"
+                "${file}",
+                "--server.headless",
+                "true",
+                "--theme.base",
+                "light"
             ]
         },
         {

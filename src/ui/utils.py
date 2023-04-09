@@ -55,8 +55,8 @@ def get_wikipedia_url_from_title(title:str)->str:
 
 
 def show_answer(answer:Answer,documents:List[Document]):
-    highlight_color =  "#024d10#"#"#023020"
-    background_color = "#0f1212"
+    # highlight_color =  "#024d10#"#"#023020"
+    # background_color = "#0f1212"
     score =  round(answer.score*100,2)
     st.write(f"### Answer:\"{answer.answer}\" (Score: {score}%)")
     
@@ -64,7 +64,7 @@ def show_answer(answer:Answer,documents:List[Document]):
     
     st.write("**Context:**")
     annotated_text(answer.context[:offsets_in_context.start],
-        (answer.answer, f"ANSWER ({score}%)",background_color ,highlight_color),
+        (answer.answer, f"ANSWER ({score}%)"),
         answer.context[offsets_in_context.end:])
     
     title=None
@@ -102,7 +102,7 @@ def show_answer(answer:Answer,documents:List[Document]):
             st.markdown(f"### Title: {title}")
         
         annotated_text(document.content[:offsets_in_document.start],
-        (answer.answer, f"ANSWER ({score}%)", highlight_color),
+        (answer.answer, f"ANSWER ({score}%)"),
             document.content[offsets_in_document.end:])
         
     st.markdown(f"#### Source: {source_display}") 

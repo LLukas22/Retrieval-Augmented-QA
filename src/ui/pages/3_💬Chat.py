@@ -6,7 +6,7 @@ root = str(Path(__file__).parent.parent.parent)
 if root not in sys.path:
     sys.path.insert(0, root)
    
-from typing import List,Optional,Dict,Any
+from typing import List,Optional,Dict,Any,Iterator,Generator
 import streamlit as st 
 from streamlit_chat import message as show_message
 from ui.utils import show_answer,sidebar_footer,get_api_connector,set_state_if_absent,set_default_generation_config,get_generation_config
@@ -14,9 +14,22 @@ import time
 from schemas.chat import ChatMessage,DefaultConfigResponse
 from haystack.schema import Answer,Document
 
-SYSTEM_PROMPT = "The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know. \n\n Current Conversation:"
-WELCOME_MESSAGE = "Hello, i will try to answer any questions you have for me! Untick the checkbox to disable the document search and chat with me normaly."
+SYSTEM_PROMPT = os.getenv("SYSTEM_PROMPT","The following is a friendly conversation between a human and an AI. The AI is talkative and provides lots of specific details from its context. If the AI does not know the answer to a question, it truthfully says it does not know. \n\n Current Conversation:")
+WELCOME_MESSAGE = os.getenv("CHAT_WELCOME_MESSAGE","Hello, i will try to answer any questions you have for me! Untick the checkbox to disable the document search and chat with me normaly.")
 
+
+
+def batch_generator(generator:Generator[str,None,None],size:int=7)->Generator[str,None,None]:
+    buffer = []
+    for entry in generator:
+        buffer.append(entry)
+        if len(buffer) >= size:
+            yield "".join(buffer)
+            buffer=[]
+    if len(buffer) > 0:
+        yield "".join(buffer)
+        buffer=[]
+                
 def build_alpaca_prompt(question:str,contexts:List[str],answers:List[str]):
     instruction = f"Try to answer the following question concise and well formulated in a few sentenes using only the given informations. Explain your answer.\nQuestion:\"{question}\"\n"
     
@@ -171,6 +184,7 @@ def render():
     placeholder=st.empty().container()
     
     def render_chat_history():
+        placeholder.empty()
         with placeholder:
             for i,message in enumerate(st.session_state.chat_messages):
                 if message.role == "assistant":
@@ -178,7 +192,21 @@ def render():
                 elif message.role == "user":
                     show_message(message.display_text,is_user=True,key=f"user_{i}")
                 
-    placeholder_generated_massage=st.empty()     
+    placeholder_generated_massage=st.empty()    
+    
+    
+    def prompt_model(chat_messages,stop_words=[])->str:
+        render_chat_history()
+        answer = ""
+        for i,piece in enumerate(batch_generator(connector.chat_streaming(chat_messages,config=get_generation_config(),stop_words=stop_words),size=10)):
+            answer+=piece
+            with placeholder_generated_massage:
+                show_message(answer,key=f"generated_answer_{i}")
+        st.session_state.chat_messages.append(UIChatMessage(ChatMessage(content=answer,role="assistant")))
+        return answer
+            
+    
+    
        
     form = st.form("ask_form",clear_on_submit=True)
     
@@ -205,30 +233,16 @@ def render():
             if st.session_state.chat_qa_results:
                 possible_answers =  st.session_state.chat_qa_results.answers[:st.session_state['chat_document_count']]
                 documents =  st.session_state.chat_qa_results.documents
-                augmented_prompt=build_augmented_prompt(prompt,possible_answers,documents)
+                augmented_prompts=build_augmented_prompt(prompt,possible_answers,documents)
                 
                 st.session_state.chat_messages.append(UIChatMessage(ChatMessage(content=f"I found {len(documents)} documents that might answer your question and linked them bellow. I will now try to formulate an answer based on the top {st.session_state['chat_document_count']} documents.",role="assistant"),should_send=False))
-                
-                render_chat_history()
-                answer = ""
-                for piece in connector.chat_streaming(augmented_prompt,config=get_generation_config()):
-                    answer+=piece
-                    with placeholder_generated_massage:
-                        show_message(answer)
-                st.session_state.chat_messages.append(UIChatMessage(ChatMessage(content=answer,role="assistant")))
+                prompt_model(augmented_prompts)
             else:
                 st.session_state.chat_messages.append(UIChatMessage(ChatMessage(content=f"Sorry i found no documents regarding your question, are you sure the document store is running?",role="assistant"),should_send=False))
-         
+                render_chat_history()
         else:       
             st.session_state.chat_messages.append(UIChatMessage(ChatMessage(content=prompt,role="user")))    
-            
-            render_chat_history()
-            answer = ""
-            for piece in connector.chat_streaming(get_messages_to_send(),config=get_generation_config()):
-                answer+=piece
-                with placeholder_generated_massage:
-                    show_message(answer)
-            st.session_state.chat_messages.append(UIChatMessage(ChatMessage(content=answer,role="assistant")))
+            prompt_model(get_messages_to_send(),stop_words=["Human:"])
             
         prompt=None    
         st.session_state["chat_prompt"] = ""

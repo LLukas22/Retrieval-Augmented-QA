@@ -14,7 +14,7 @@ st.set_page_config(
     page_title="Introduction",
     page_icon="👋",
 )
-message = os.getenv("WELCOME_MESSAGE", "This demo was initialized with about 500.000 english wikipedia articles from the 01-04-2023. Fell free to ask the system about any topic you like.\n\n ⚠️CAUTION: If offline models are used no safety layers are in place. If you ask the system about an offensive topic it will answer you, even if the answer is immoral!⚠️")
+message = os.getenv("WELCOME_MESSAGE", "This demo was initialized with about 500.000 english wikipedia articles from April, 1st, 2023. Fell free to ask the system about any topic you like.\n\n ⚠️CAUTION: If offline models are used no safety layers are in place. If you ask the system about an offensive topic it will answer you, even if the answer is immoral!⚠️")
 st.write("# Welcome the Retrieval Augmented QA-Demo! 👋")
 st.write("This is a demo of a transformer augmented document retrieval and qestion-answering pipeline.")
 st.write(message)
