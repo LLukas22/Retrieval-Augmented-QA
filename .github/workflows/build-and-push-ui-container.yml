@@ -37,5 +37,5 @@ jobs:
         with:
           context: ./src
           push: true
-          file: UI.Dockerfile
+          file: ./src/UI.Dockerfile
           tags: llukas22/retrieval-qa-ui:latest
