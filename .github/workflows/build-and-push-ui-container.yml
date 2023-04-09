@@ -11,6 +11,8 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      Greeting: Hello
     permissions:
       contents: read
       packages: write
@@ -28,5 +30,6 @@ jobs:
       
       - name: 'Build and push Docker image'
         run: |
+          DOCKER_BUILDKIT: 1 
           docker build ./src --file ./src/UI.Dockerfile --tag ghcr.io/llukas22/retrieval-qa-ui:latest
           docker push ghcr.io/llukas22/retrieval-qa-ui:latest
