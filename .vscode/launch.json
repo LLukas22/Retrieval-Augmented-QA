@@ -23,9 +23,7 @@
                 "run",
                 "${file}",
                 "--server.headless",
-                "true",
-                "--theme.base",
-                "light"
+                "true"
             ]
         },
         {
