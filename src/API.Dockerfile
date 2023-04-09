@@ -1,6 +1,7 @@
 FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
-#pytorch/pytorch:1.13.0-cuda11.6-cudnn8-runtime 
-#nvidia/cuda:11.7.0-devel-ubuntu22.04
+LABEL org.opencontainers.image.source=https://github.com/LLukas22/Retrieval-Augmented-QA
+LABEL org.opencontainers.image.description="API hosting QA and Generation models"
+LABEL org.opencontainers.image.licenses=MIT
 
 # Get Python 3.10
 RUN apt-get update -y
