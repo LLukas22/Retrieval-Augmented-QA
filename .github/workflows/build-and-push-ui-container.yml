@@ -32,4 +32,4 @@ jobs:
           context: ./src
           push: true
           file: UI.Dockerfile
-          tags: LLukas22/retrieval-qa-ui:latest
+          tags: llukas22/retrieval-qa-ui:latest
