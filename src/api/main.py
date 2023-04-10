@@ -84,7 +84,7 @@ if __name__ == "__main__":
     container.config.concurency_limit.from_env("CONCURENCY_LIMIT",as_=int,default=5)
     container.config.debug.from_env("DEBUG",as_=parse_bool,default=True)
     
-    container.config.chatmodel.from_env("CHATMODEL",as_=parse_chatmodel,default="GPU")
+    container.config.chatmodel.from_env("CHATMODEL",as_=parse_chatmodel,default="CPU")
     container.config.chat_max_length.from_env("CHAT_MAX_INPUT_LENGTH",as_=int,default=2000)
     
     #OpenAI Vars

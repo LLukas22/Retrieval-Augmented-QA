@@ -2,7 +2,10 @@ version: "3.9"
 services:
   #Rest api to access the models
   haystack-api:
-    image: ghcr.io/llukas22/retrieval-qa-api:latest
+    build:
+      context: ./src
+      dockerfile: API.Dockerfile
+    image: haystack-api
     container_name: haystack-api
     restart: unless-stopped
     ports:
@@ -14,10 +17,10 @@ services:
       - USE_GPU=false
       - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
       - OPENAI_TOKEN=${OPENAI_TOKEN}
-      - CHATMODEL=CPU     #OPENAI, GPU or CPU
+      - CHATMODEL=OPENAI     #OPENAI, GPU or CPU
 
       #CPU Specific Options
-      - CPU_MODEL_THREADS=8
+      - CPU_MODEL_THREADS=12
 
     #cache model downloads over restarts
     volumes:
@@ -26,15 +29,18 @@ services:
       - elasticsearch
     networks:
       - qa-network
-    #comment this in to pass gpus to the container
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - capabilities: [gpu]
+    #Pass gpus to the container
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
   #Streamlit ui to easily use the api
   streamlit-ui:
-    image: ghcr.io/llukas22/retrieval-qa-ui:latest
+    build:
+      context: ./src
+      dockerfile: UI.Dockerfile
+    image: streamlit-ui
     container_name: streamlit-ui
     restart: unless-stopped
     ports:
