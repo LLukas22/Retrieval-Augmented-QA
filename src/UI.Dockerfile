@@ -1,6 +1,6 @@
 FROM python:3.10
 LABEL org.opencontainers.image.source=https://github.com/LLukas22/Retrieval-Augmented-QA
-LABEL org.opencontainers.image.description="Streamlit UI fur use with the Retrieval-Augmented-QA-API"
+LABEL org.opencontainers.image.description="Streamlit UI for use with the Retrieval-Augmented-QA-API"
 LABEL org.opencontainers.image.licenses=MIT
 
 # Copy Files

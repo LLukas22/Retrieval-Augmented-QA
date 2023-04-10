@@ -1,0 +1,3 @@
+schema-st4-parser
+pandas
+farm-haystack

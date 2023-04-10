@@ -1,6 +1,6 @@
 FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
 LABEL org.opencontainers.image.source=https://github.com/LLukas22/Retrieval-Augmented-QA
-LABEL org.opencontainers.image.description="API hosting QA and Generation models"
+LABEL org.opencontainers.image.description="API hosting a Retrieval-Augmented-QA-Pipeline and Chat models"
 LABEL org.opencontainers.image.licenses=MIT
 
 # Get Python 3.10
