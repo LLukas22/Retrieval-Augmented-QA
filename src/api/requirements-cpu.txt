@@ -1,0 +1,12 @@
+protobuf==3.20.1
+huggingface_hub
+llama-cpp-python[server]
+openai
+pynvml
+farm-haystack
+
+#api dependencies
+psutil
+fastapi
+uvicorn
+dependency_injector

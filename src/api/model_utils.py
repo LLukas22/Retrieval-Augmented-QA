@@ -2,8 +2,10 @@ import time
 import queue
 import threading
 import collections.abc
+
 from transformers.generation.streamers import BaseStreamer
 from transformers.generation.stopping_criteria import StoppingCriteria
+
 from transformers import AutoTokenizer
 from typing import List
 import torch

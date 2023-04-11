@@ -1,28 +1,36 @@
 from typing import Dict,List,Generator,Type
 import openai
-from transformers import GenerationConfig
 from transformers.generation.stopping_criteria import StoppingCriteriaList
-
-from peft import PeftModel
+from transformers import AutoModel,AutoTokenizer,AutoModelForCausalLM,GenerationConfig
 from llama_cpp import Llama
 from pathlib import Path
 from huggingface_hub import hf_hub_download
 import torch
 from abc import ABC, abstractmethod
 import logging 
-import os
 from dependency_injector.providers import Configuration  
 from schemas.chat import ChatMessage,ModelInfo
 from .model_utils import GeneratorStreamer,ManualStopCondition
 import threading
 
+#gpu only dependencies:
+CAN_RUN_PEFT=False
+try:
+    from peft import PeftModel
+    CAN_RUN_PEFT=True
+except:
+    pass
+    
 CAN_RUN_LLAMA = False
 try:
-    from transformers import AutoModel,AutoTokenizer,AutoModelForCausalLM
+    
     from transformers import LlamaForCausalLM,LlamaTokenizer
     CAN_RUN_LLAMA=True
 except:
     pass
+
+
+
 
 class ModelAdapter(ABC):
     def __init__(self) -> None:
@@ -173,6 +181,8 @@ class HF_Gpu_Adapter(ModelAdapter):
                                                       load_in_8bit=self.use_8bit)
         
         if self.use_peft:
+            if not CAN_RUN_PEFT:
+                "Peft is not available! Please use the gpu container!"
             self.model = PeftModel.from_pretrained(self.model, self.adapter_model, device_map={'': 0})
             
         self.model = self.model.eval()
@@ -238,12 +248,14 @@ class HF_Gpu_Adapter(ModelAdapter):
             self.stop_reason="Max Tokens!"
     
 class Cpu_Adapter(ModelAdapter): 
-    def __init__(self,hf_token:str=None,repository:str="LLukas22/alpaca-native-7B-4bit-ggjt",filename:str="ggjt-model.bin",max_length:int=2000,threads:int=8) -> None:
+    def __init__(self,hf_token:str=None,repository:str="LLukas22/alpaca-native-7B-4bit-ggjt",filename:str="ggjt-model.bin",max_length:int=2000,threads:int=8,kv_16:bool=True,embedding:bool=True) -> None:
         self.max_length = max_length
         self.threads=threads
         self.hf_token=hf_token
         self.repository=repository
         self.filename = filename
+        self.kv_16=kv_16
+        self.embedding=embedding
            
             
     def info(self)->ModelInfo:
@@ -254,7 +266,7 @@ class Cpu_Adapter(ModelAdapter):
     
     def load(self):
         self.ggjt_model = hf_hub_download(repo_id=self.repository, filename=self.filename,token=self.hf_token)        
-        self.model = Llama(model_path=str(self.ggjt_model), n_ctx=self.max_length,n_threads=self.threads)
+        self.model = Llama(model_path=str(self.ggjt_model), n_ctx=self.max_length,n_threads=self.threads,f16_kv=self.kv_16,embedding=self.embedding)
     
     def generate(self,messages:List[ChatMessage],generationConfig:GenerationConfig,stop_words:List[str]=[])->str:
         prompt=build_llm_prompt(messages)
@@ -305,7 +317,9 @@ def adapter_factory(configuration:Configuration)->ModelAdapter:
             threads=configuration["cpu_model_threads"],
             repository=configuration["cpu_model_repo"],
             filename=configuration["cpu_model_filename"],
-            max_length=configuration["chat_max_length"]
+            max_length=configuration["chat_max_length"],
+            kv_16=configuration["cpu_model_kv_16"],
+            embedding=configuration["cpu_model_embedding"]
             )
     else:
         raise Exception("Unknown model type: " + model_to_use)

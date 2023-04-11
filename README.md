@@ -75,7 +75,8 @@ To be able to run this repo on different hardware configurations many settings a
 | CPU_MODEL_REPO               | LLukas22/alpaca-native-7B-4bit-ggjt       | CPU model repository                       |
 | CPU_MODEL_FILENAME           | ggjt-model.bin                            | CPU model filename                         |
 | CPU_MODEL_THREADS            | 8                                         | CPU model threads                          |
-
+| CPU_MODEL_KV_16              | True                                      | CPU model use f16 for KV-Store             |
+| CPU_MODEL_EMBEDDING          | True                                      | CPU model enable embedding mode            |
 
 ### UI:
 

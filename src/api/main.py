@@ -104,7 +104,8 @@ if __name__ == "__main__":
         container.config.cpu_model_repo.from_env("CPU_MODEL_REPO",default="LLukas22/alpaca-native-7B-4bit-ggjt")
         container.config.cpu_model_filename.from_env("CPU_MODEL_FILENAME",default="ggjt-model.bin")
         container.config.cpu_model_threads.from_env("CPU_MODEL_THREADS",as_=int,default=8)
-        
+        container.config.cpu_model_kv_16.from_env("CPU_MODEL_KV_16",as_=parse_bool,default=True)
+        container.config.cpu_model_embedding.from_env("CPU_MODEL_EMBEDDING",as_=parse_bool,default=True)
         container.wire(modules=[__name__])
         
     
