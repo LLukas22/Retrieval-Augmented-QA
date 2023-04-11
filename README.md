@@ -59,8 +59,8 @@ To be able to run this repo on different hardware configurations many settings a
 | ELASTICSEARCH_PASSWORD       |                                           | Elasticsearch password                     |
 | EMBEDDING_DIM                | 384                                       | Embedding dimension                        |
 | SIMILARITY                   | cosine                                    | Similarity measure                         |
-| EMBEDDING_MODEL              | sentence-transformers/all-MiniLM-L12-v2   | Embedding model                            |
-| EXTRACTIVE_QA_MODEL          | deepset/minilm-uncased-squad2             | Extractive QA model                        |
+| EMBEDDING_MODEL              | LLukas22/all-MiniLM-L12-v2-embedding-all  | Embedding model                            |
+| EXTRACTIVE_QA_MODEL          | LLukas22/all-MiniLM-L12-v2-qa-en          | Extractive QA model                        |
 | USE_GPU                      | False                                     | Use GPU for QA and embedding               |
 | USE_8BIT                     | False                                     | Use bits-and-bytes                         |
 | CONCURENCY_LIMIT             | 5                                         | Concurrency limit of api                   |
@@ -86,6 +86,7 @@ To be able to run this repo on different hardware configurations many settings a
 | WELCOME_MESSAGE           | This demo was initialized with about 500,000 English Wikipedia articles from April 1st, 2023. Feel free to ask the system about any topic you like. \n\n ⚠️CAUTION: If offline models are used, no safety layers are in place. If you ask the system about an offensive topic, it will answer you, even if the answer is immoral!⚠️ |
 | API_HOST                  | localhost |
 | API_PORT                  | 8001 |
+| ENABLE_ADMIN              | False |
 
 
 ### Wiki-Importer:
@@ -95,7 +96,8 @@ To be able to run this repo on different hardware configurations many settings a
 | ELASTIC_HOST           | localhost    | Elasticsearch host address   |
 | ELASTIC_PORT           | 9200         | Elasticsearch port number    |
 | ELASTIC_EMBEDDING_DIM  | 384          | Embedding dimension          |
-| CACHE_DIR              | ./importer_cache | Cache directory path      |
+| CACHE_DIR              | ./importer_cache | Cache directory path     |
+| WIKI_URL              | https://dumps.wikimedia.org/simplewiki/20230401/simplewiki-20230401-pages-articles-multistream.xml.bz2 | URL of the Wiki-dump to download    |
 
 ### ST4-Importer:
 | Environment Variable   | Default      | Description                  |

@@ -69,46 +69,51 @@ def App(
         
     
 if __name__ == "__main__":
-    container = Container()
-    container.config.hf_token.from_env("HUGGINGFACE_TOKEN")
-    container.config.elasticsearch_host.from_env("ELASTICSEARCH_HOST",default="localhost")
-    container.config.elasticsearch_port.from_env("ELASTICSEARCH_PORT",as_=int,default=9200)
-    container.config.elasticsearch_user.from_env("ELASTICSEARCH_USER",default="")
-    container.config.elasticsearch_password.from_env("ELASTICSEARCH_PASSWORD",default="")
-    container.config.embedding_dim.from_env("EMBEDDING_DIM",as_=int,default=384)
-    container.config.similarity.from_env("SIMILARITY",default="cosine")
-    container.config.embedding_model.from_env("EMBEDDING_MODEL",default="sentence-transformers/all-MiniLM-L12-v2")
-    container.config.extractive_qa_model.from_env("EXTRACTIVE_QA_MODEL",default="deepset/minilm-uncased-squad2")
-    container.config.use_gpu.from_env("USE_GPU",as_=parse_bool,default=False)
-    container.config.use_8bit.from_env("USE_8BIT",as_=parse_bool,default=False)
-    container.config.concurency_limit.from_env("CONCURENCY_LIMIT",as_=int,default=5)
-    container.config.debug.from_env("DEBUG",as_=parse_bool,default=True)
+    try:
+        container = Container()
+        container.config.hf_token.from_env("HUGGINGFACE_TOKEN")
+        container.config.elasticsearch_host.from_env("ELASTICSEARCH_HOST",default="localhost")
+        container.config.elasticsearch_port.from_env("ELASTICSEARCH_PORT",as_=int,default=9200)
+        container.config.elasticsearch_user.from_env("ELASTICSEARCH_USER",default="")
+        container.config.elasticsearch_password.from_env("ELASTICSEARCH_PASSWORD",default="")
+        container.config.embedding_dim.from_env("EMBEDDING_DIM",as_=int,default=384)
+        container.config.similarity.from_env("SIMILARITY",default="cosine")
+        container.config.embedding_model.from_env("EMBEDDING_MODEL",default="LLukas22/all-MiniLM-L12-v2-embedding-all")
+        container.config.extractive_qa_model.from_env("EXTRACTIVE_QA_MODEL",default="LLukas22/all-MiniLM-L12-v2-qa-en")
+        container.config.use_gpu.from_env("USE_GPU",as_=parse_bool,default=False)
+        container.config.use_8bit.from_env("USE_8BIT",as_=parse_bool,default=False)
+        container.config.concurency_limit.from_env("CONCURENCY_LIMIT",as_=int,default=5)
+        container.config.debug.from_env("DEBUG",as_=parse_bool,default=True)
+        
+        container.config.chatmodel.from_env("CHATMODEL",as_=parse_chatmodel,default="CPU")
+        container.config.chat_max_length.from_env("CHAT_MAX_INPUT_LENGTH",as_=int,default=2000)
+        
+        #OpenAI Vars
+        container.config.open_ai_token.from_env("OPENAI_TOKEN",default=None)
+        
+        #GPU Vars
+        container.config.base_chat_model.from_env("BASE_CHAT_MODEL",default="decapoda-research/llama-7b-hf")
+        container.config.use_peft.from_env("USE_PEFT",as_=parse_bool,default=True)
+        #container.config.adapter_chat_model.from_env("ADAPTER_CHAT_MODEL",default="nomic-ai/gpt4all-lora")
+        container.config.adapter_chat_model.from_env("ADAPTER_CHAT_MODEL",default="tloen/alpaca-lora-7b")
+        
+        
+        container.config.chat_apply_optimizations.from_env("ADAPTER_APPLY_OPTIMIZATIONS",as_=parse_bool,default=True)
+        
+        #CPU Vars
+        container.config.cpu_model_repo.from_env("CPU_MODEL_REPO",default="LLukas22/alpaca-native-7B-4bit-ggjt")
+        container.config.cpu_model_filename.from_env("CPU_MODEL_FILENAME",default="ggjt-model.bin")
+        container.config.cpu_model_threads.from_env("CPU_MODEL_THREADS",as_=int,default=8)
+        
+        container.wire(modules=[__name__])
+        
     
-    container.config.chatmodel.from_env("CHATMODEL",as_=parse_chatmodel,default="CPU")
-    container.config.chat_max_length.from_env("CHAT_MAX_INPUT_LENGTH",as_=int,default=2000)
-    
-    #OpenAI Vars
-    container.config.open_ai_token.from_env("OPENAI_TOKEN",default=None)
-    
-    #GPU Vars
-    container.config.base_chat_model.from_env("BASE_CHAT_MODEL",default="decapoda-research/llama-7b-hf")
-    container.config.use_peft.from_env("USE_PEFT",as_=parse_bool,default=True)
-    #container.config.adapter_chat_model.from_env("ADAPTER_CHAT_MODEL",default="nomic-ai/gpt4all-lora")
-    container.config.adapter_chat_model.from_env("ADAPTER_CHAT_MODEL",default="tloen/alpaca-lora-7b")
-    
-    
-    container.config.chat_apply_optimizations.from_env("ADAPTER_APPLY_OPTIMIZATIONS",as_=parse_bool,default=True)
-    
-    #CPU Vars
-    container.config.cpu_model_repo.from_env("CPU_MODEL_REPO",default="LLukas22/alpaca-native-7B-4bit-ggjt")
-    container.config.cpu_model_filename.from_env("CPU_MODEL_FILENAME",default="ggjt-model.bin")
-    container.config.cpu_model_threads.from_env("CPU_MODEL_THREADS",as_=int,default=8)
-    
-    
-    
-    container.wire(modules=[__name__])
-    
-   
-    app = App(container)    
-    logging.info("Open http://127.0.0.1:8001/docs to see Swagger API Documentation.")
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+        app = App(container)    
+        logging.info("Open http://127.0.0.1:8001/docs to see Swagger API Documentation.")
+        uvicorn.run(app, host="0.0.0.0", port=8001)
+        
+    except Exception as e:
+        print("Something seams to be broken. Please check the logs.")
+        print(e)
+        logger.exception(e)
+        

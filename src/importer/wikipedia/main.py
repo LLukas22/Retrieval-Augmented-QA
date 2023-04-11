@@ -20,8 +20,8 @@ if __name__ == "__main__":
     elastic_port = os.getenv("ELASTIC_PORT",9200)
     dim = os.getenv("ELASTIC_EMBEDDING_DIM",384)
     cache_dir = Path(os.getenv("CACHE_DIR","./importer_cache"))
+    url=os.getenv("WIKI_URL","https://dumps.wikimedia.org/simplewiki/20230401/simplewiki-20230401-pages-articles-multistream.xml.bz2")
     
-    url="https://dumps.wikimedia.org/simplewiki/20230401/simplewiki-20230401-pages-articles-multistream.xml.bz2" 
     filename = url.split("/")[-1]
     cache_dir.mkdir(parents=True, exist_ok=True)
     pages_dir  = cache_dir /  "pages"
