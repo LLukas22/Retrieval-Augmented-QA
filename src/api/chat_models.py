@@ -248,7 +248,7 @@ class HF_Gpu_Adapter(ModelAdapter):
             self.stop_reason="Max Tokens!"
     
 class Cpu_Adapter(ModelAdapter): 
-    def __init__(self,hf_token:str=None,repository:str="LLukas22/alpaca-native-7B-4bit-ggjt",filename:str="ggjt-model.bin",max_length:int=2000,threads:int=8,kv_16:bool=True,embedding:bool=True) -> None:
+    def __init__(self,hf_token:str=None,repository:str="LLukas22/alpaca-native-7B-4bit-ggjt",filename:str="ggjt-model.bin",max_length:int=2000,threads:int=8,kv_16:bool=True,embedding:bool=True,use_mlock:bool=False) -> None:
         self.max_length = max_length
         self.threads=threads
         self.hf_token=hf_token
@@ -256,6 +256,7 @@ class Cpu_Adapter(ModelAdapter):
         self.filename = filename
         self.kv_16=kv_16
         self.embedding=embedding
+        self.use_mlock=use_mlock
            
             
     def info(self)->ModelInfo:
@@ -266,7 +267,7 @@ class Cpu_Adapter(ModelAdapter):
     
     def load(self):
         self.ggjt_model = hf_hub_download(repo_id=self.repository, filename=self.filename,token=self.hf_token)        
-        self.model = Llama(model_path=str(self.ggjt_model), n_ctx=self.max_length,n_threads=self.threads,f16_kv=self.kv_16,embedding=self.embedding)
+        self.model = Llama(model_path=str(self.ggjt_model), n_ctx=self.max_length,n_threads=self.threads,f16_kv=self.kv_16,embedding=self.embedding,use_mlock=self.use_mlock)
     
     def generate(self,messages:List[ChatMessage],generationConfig:GenerationConfig,stop_words:List[str]=[])->str:
         prompt=build_llm_prompt(messages)
@@ -319,7 +320,8 @@ def adapter_factory(configuration:Configuration)->ModelAdapter:
             filename=configuration["cpu_model_filename"],
             max_length=configuration["chat_max_length"],
             kv_16=configuration["cpu_model_kv_16"],
-            embedding=configuration["cpu_model_embedding"]
+            embedding=configuration["cpu_model_embedding"],
+            use_mlock=configuration["cpu_model_use_mlock"]
             )
     else:
         raise Exception("Unknown model type: " + model_to_use)

@@ -106,6 +106,7 @@ if __name__ == "__main__":
         container.config.cpu_model_threads.from_env("CPU_MODEL_THREADS",as_=int,default=8)
         container.config.cpu_model_kv_16.from_env("CPU_MODEL_KV_16",as_=parse_bool,default=True)
         container.config.cpu_model_embedding.from_env("CPU_MODEL_EMBEDDING",as_=parse_bool,default=True)
+        container.config.cpu_model_use_mlock.from_env("CPU_MODEL_USE_MLOCK",as_=parse_bool,default=False)
         container.wire(modules=[__name__])
         
     
