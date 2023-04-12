@@ -29,12 +29,6 @@ services:
       - elasticsearch
     networks:
       - qa-network
-    #Pass gpus to the container
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]
   #Streamlit ui to easily use the api
   streamlit-ui:
     build:
