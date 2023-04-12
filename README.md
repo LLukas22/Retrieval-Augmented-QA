@@ -1,6 +1,8 @@
 # Retrieval-Augmented-QA-Demo
 Query, ask and chat with a document-index via a friendly web ui!
 
+A demo is hosted [here](https://master-ui.kreudev.dynv6.net/). (Please be gentle to the server, it's literally running on an old laptop 😅) 
+
 <p align="center">
     <img src=".images/Chat_Example.gif" width="430" height="550" />
 </p>
