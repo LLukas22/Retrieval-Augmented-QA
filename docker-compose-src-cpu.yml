@@ -14,9 +14,9 @@ services:
       - HAYSTACK_TELEMETRY_ENABLED=false
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
-      - USE_GPU=True
+      - USE_GPU=False
       - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
-      - CHATMODEL=GPU     #OPENAI, GPU or CPU
+      - CHATMODEL=CPU    #OPENAI, GPU or CPU
       #CPU Specific Options
       - CPU_MODEL_THREADS=${CPU_THREADS}
       - CPU_MODEL_USE_MLOCK=${CPU_MLOCK}
