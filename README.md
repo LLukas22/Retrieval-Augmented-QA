@@ -10,9 +10,12 @@ Query, ask and chat with a document-index via a friendly web ui!
 Simply run it via Docker-Compose. An example configuration can be found in the `docker-compose.yml` file.
 The UI is then available via http://localhost:8501 and the API-Swagger-Documentation via http://localhost:8001/docs
 
-If you want build it from source just download the repo and use the `docker-compose-src.yml` file. 
+If you want build it from source just download the repo and use the `docker-compose-src-*.yml` files. 
+an example `.env` config can be found  in `.env.example`.
 
 All modules are available as prebuild containers via the [Github container registry](https://github.com/LLukas22?tab=packages&repo_name=Retrieval-Augmented-QA). 
+
+⚠️If you want to use the CPU-Adapter you should probably build the api-container from source as it will build  llama.cpp according to your cpu  instructions!
 ## Overview
 The demo has three main components:
 * Streamlit web ui

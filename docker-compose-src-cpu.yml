@@ -2,7 +2,10 @@ version: "3.9"
 services:
   #Rest api to access the models
   haystack-api:
-    image: ghcr.io/llukas22/retrieval-qa-api:latest
+    build:
+      context: ./src
+      dockerfile: API.Dockerfile
+    image: haystack-api
     container_name: haystack-api
     restart: unless-stopped
     ports:
@@ -11,10 +14,13 @@ services:
       - HAYSTACK_TELEMETRY_ENABLED=false
       - ELASTICSEARCH_HOST=elasticsearch
       - ELASTICSEARCH_PORT=9200
-      - USE_GPU=false
+      - USE_GPU=True
       - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
-      - OPENAI_TOKEN=${OPENAI_TOKEN}
-      - CHATMODEL=OPENAI    #OPENAI, GPU or CPU
+      - CHATMODEL=GPU     #OPENAI, GPU or CPU
+      #CPU Specific Options
+      - CPU_MODEL_THREADS=${CPU_THREADS}
+      - CPU_MODEL_USE_MLOCK=${CPU_MLOCK}
+      - CHAT_MAX_INPUT_LENGTH=${MAX_INPUT_LENGTH}
 
     #cache model downloads over restarts
     volumes:
@@ -23,19 +29,38 @@ services:
       - elasticsearch
     networks:
       - qa-network
-    #comment this in to pass gpus to the container
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - capabilities: [gpu]
+    #Pass gpus to the container
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
   #Streamlit ui to easily use the api
   streamlit-ui:
-    image: ghcr.io/llukas22/retrieval-qa-ui:latest
+    build:
+      context: ./src
+      dockerfile: UI.Dockerfile
+    image: streamlit-ui
     container_name: streamlit-ui
     restart: unless-stopped
     ports:
       - "8501:8501"
+    environment:
+      - API_HOST=haystack-api
+    depends_on:
+      - haystack-api
+    networks:
+      - qa-network
+
+  streamlit-ui-admin:
+    build:
+      context: ./src
+      dockerfile: UI.Dockerfile
+    image: streamlit-ui
+    container_name: streamlit-ui-admin
+    restart: unless-stopped
+    ports:
+      - "8502:8501"
     environment:
       - API_HOST=haystack-api
       - ENABLE_ADMIN=true
@@ -43,6 +68,7 @@ services:
       - haystack-api
     networks:
       - qa-network
+
   #Elasticsearch to use as a database for the API
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.5.1
