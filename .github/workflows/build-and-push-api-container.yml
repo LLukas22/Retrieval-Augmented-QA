@@ -36,5 +36,5 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
         run: |
-          docker build ./src --file ./src/API.Dockerfile --tag ghcr.io/llukas22/retrieval-qa-api:latest --tag ghcr.io/llukas22/retrieval-qa-api:${{ steps.previoustag.outputs.tag }}
+          docker buildx build --platform linux/amd64 ./src --file ./src/API.Dockerfile --tag ghcr.io/llukas22/retrieval-qa-api:latest --tag ghcr.io/llukas22/retrieval-qa-api:${{ steps.previoustag.outputs.tag }}
           docker push --all-tags ghcr.io/llukas22/retrieval-qa-api
