@@ -24,7 +24,7 @@ services:
 
     #cache model downloads over restarts
     volumes:
-      - ./huggingface_cache:/huggingface/cache
+      - ${HF_CACHE}:/huggingface/cache
     depends_on:
       - elasticsearch
     networks:
@@ -73,7 +73,7 @@ services:
       - discovery.type=single-node
       - ES_JAVA_OPTS=-Xms512M -Xmx512M
     volumes:
-      - ./elasticsearch-data:/usr/share/elasticsearch/data
+      - ${ELASTIC_DATA}:/usr/share/elasticsearch/data
     ports:
       - 9200:9200
     networks:
