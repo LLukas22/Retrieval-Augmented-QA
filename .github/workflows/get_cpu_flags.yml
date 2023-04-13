@@ -13,5 +13,5 @@ jobs:
     steps:
       - name: Group of log lines
         shell: bash
-        run: echo lscpu | grep Flags
+        run: lscpu | grep Flags
            
