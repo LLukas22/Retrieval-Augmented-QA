@@ -1,0 +1,17 @@
+name: Get CPU Flags
+
+on:   
+  workflow_dispatch:
+  
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      
+    steps:
+      - name: Group of log lines
+        shell: bash
+        run: echo lscpu | grep Flags
+           
