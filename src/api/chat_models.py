@@ -1,17 +1,18 @@
-from typing import Dict,List,Generator,Type
+from typing import Dict,List,Generator,Type,Optional
 import openai
 from transformers.generation.stopping_criteria import StoppingCriteriaList
-from transformers import AutoModel,AutoTokenizer,AutoModelForCausalLM,GenerationConfig
-from llama_cpp import Llama
-from pathlib import Path
+from transformers import AutoModel,AutoTokenizer,AutoModelForCausalLM,GenerationConfig,LlamaTokenizer,LlamaForCausalLM
+from llama_rs_python import Model,SessionConfig,Precision
+from llama_rs_python import GenerationConfig as RSGenerationConfig
 from huggingface_hub import hf_hub_download
 import torch
 from abc import ABC, abstractmethod
 import logging 
 from dependency_injector.providers import Configuration  
 from schemas.chat import ChatMessage,ModelInfo
-from .model_utils import GeneratorStreamer,ManualStopCondition
+from .model_utils import GeneratorStreamer,ManualStopCondition,CPUStreamer
 import threading
+
 
 #gpu only dependencies:
 CAN_RUN_PEFT=False
@@ -20,17 +21,6 @@ try:
     CAN_RUN_PEFT=True
 except:
     pass
-    
-CAN_RUN_LLAMA = False
-try:
-    
-    from transformers import LlamaForCausalLM,LlamaTokenizer
-    CAN_RUN_LLAMA=True
-except:
-    pass
-
-
-
 
 class ModelAdapter(ABC):
     def __init__(self) -> None:
@@ -141,7 +131,8 @@ class HF_Gpu_Adapter(ModelAdapter):
                  apply_optimications:bool,
                  max_length:int=2000,
                  model_prototype:Type[AutoModel]=LlamaForCausalLM,
-                 tokenizer_prototype:Type[AutoTokenizer]=LlamaTokenizer
+                 tokenizer_prototype:Type[AutoTokenizer]=LlamaTokenizer,
+                 tokenizer_name:Optional[str]=None
                  ) -> None:
         self.base_model = base_model
         self.use_peft = use_peft
@@ -151,7 +142,9 @@ class HF_Gpu_Adapter(ModelAdapter):
         self.max_length = max_length
         self.model_prototype = model_prototype
         self.tokenizer_prototype = tokenizer_prototype
+        self.tokenizer_name = tokenizer_name if (tokenizer_name and len(tokenizer_name) > 0 ) else base_model
         self.stop_reason = None
+        
         
         if not torch.cuda.is_available():
             raise Exception("No GPU available! Please use the CPU or OpenAI models!")
@@ -190,7 +183,7 @@ class HF_Gpu_Adapter(ModelAdapter):
         if self.apply_optimications:
             self.model = torch.compile(self.model,mode="max-autotune")
             
-        self.tokenizer = self.tokenizer_prototype.from_pretrained(self.base_model)
+        self.tokenizer = self.tokenizer_prototype.from_pretrained(self.tokenizer_name)
         self.tokenizer.max_length = self.max_length
             
             
@@ -248,51 +241,48 @@ class HF_Gpu_Adapter(ModelAdapter):
             self.stop_reason="Max Tokens!"
     
 class Cpu_Adapter(ModelAdapter): 
-    def __init__(self,hf_token:str=None,repository:str="LLukas22/alpaca-native-7B-4bit-ggjt",filename:str="ggjt-model.bin",max_length:int=2000,threads:int=8,kv_16:bool=True,embedding:bool=True,use_mlock:bool=False) -> None:
+    def __init__(self,hf_token:str=None,repository:str="Sosaka/Alpaca-native-4bit-ggml",filename:str="ggml-alpaca-7b-q4.bin",max_length:int=2048,threads:int=8,kv_16:bool=True) -> None:
         self.max_length = max_length
         self.threads=threads
         self.hf_token=hf_token
         self.repository=repository
         self.filename = filename
         self.kv_16=kv_16
-        self.embedding=embedding
-        self.use_mlock=use_mlock
            
-            
     def info(self)->ModelInfo:
-        return ModelInfo(name="LLaMA.cpp",model=self.repository, accelerator="CPU")
+        return ModelInfo(name="llama-rs",model=self.repository, accelerator="CPU")
          
     def default_config(self)->GenerationConfig:
         return GenerationConfig(top_p=0.9,top_k=40,temperature=0.8,repetition_penalty=1.1,max_new_tokens=256)
     
     def load(self):
-        self.ggjt_model = hf_hub_download(repo_id=self.repository, filename=self.filename,token=self.hf_token)        
-        self.model = Llama(model_path=str(self.ggjt_model), n_ctx=self.max_length,n_threads=self.threads,f16_kv=self.kv_16,embedding=self.embedding,use_mlock=self.use_mlock)
+        self.ggjt_model = hf_hub_download(repo_id=self.repository, filename=self.filename,token=self.hf_token)  
+        precision = Precision.FP16 if self.kv_16 else Precision.FP32
+        self.session_config = SessionConfig(threads=self.threads,context_length=self.max_length,keys_memory_type=precision,values_memory_type=precision)   
+        self.model = Model(str(self.ggjt_model),session_config=self.session_config,verbose=True)
     
-    def generate(self,messages:List[ChatMessage],generationConfig:GenerationConfig,stop_words:List[str]=[])->str:
-        prompt=build_llm_prompt(messages)
-        result = self.model(prompt=prompt,
-                   max_tokens=generationConfig.max_new_tokens,
-                   top_p=generationConfig.top_p,
-                   top_k=generationConfig.top_k,
-                   temperature=generationConfig.temperature,
-                   repeat_penalty=generationConfig.repetition_penalty,
-                   stop=stop_words)
+    
+    def _hf_to_rs_config(self,generationConfig:GenerationConfig)->RSGenerationConfig:
+        return RSGenerationConfig(
+            top_k=generationConfig.top_k,
+            top_p=generationConfig.top_p,
+            temperature=generationConfig.temperature,
+            repetition_penalty=generationConfig.repetition_penalty,
+            max_new_tokens=generationConfig.max_new_tokens,
+        )
         
-        return result['choices'][0]['text']
+        
+    def generate(self,messages:List[ChatMessage],generationConfig:GenerationConfig,stop_words:List[str]=[])->str:
+        words = list(self.generate_streaming(messages,generationConfig,stop_words=stop_words))
+        return "".join(words)
     
     def generate_streaming(self,messages:List[ChatMessage],generationConfig:GenerationConfig,stop_words:List[str]=[])->Generator[str,None,None]:
         prompt=build_llm_prompt(messages)
-        stream = self.model(prompt=prompt,
-                   max_tokens=generationConfig.max_new_tokens,
-                   top_p=generationConfig.top_p,
-                   top_k=generationConfig.top_k,
-                   temperature=generationConfig.temperature,
-                   stop=stop_words,
-                   stream=True)
+        config = self._hf_to_rs_config(generationConfig)
         
-        for result in stream:
-            yield result['choices'][0]['text']
+        streamer = CPUStreamer(self.model,config=config,prompt=prompt,stop_words=stop_words)
+        streamer.start()
+        yield from streamer
         
 
         
@@ -301,9 +291,6 @@ def adapter_factory(configuration:Configuration)->ModelAdapter:
     if model_to_use == "OPENAI":
         return ChatGPT_Adapter(configuration["open_ai_token"])
     elif model_to_use == "GPU":
-        if not CAN_RUN_LLAMA:
-            raise Exception("Cannot run GPU model because LLAMA models are not supported by your transformers installation, please use CPU or OPENAI!")
-        
         return HF_Gpu_Adapter(
             base_model=configuration["base_chat_model"],
             use_peft=configuration["use_peft"],
@@ -319,9 +306,7 @@ def adapter_factory(configuration:Configuration)->ModelAdapter:
             repository=configuration["cpu_model_repo"],
             filename=configuration["cpu_model_filename"],
             max_length=configuration["chat_max_length"],
-            kv_16=configuration["cpu_model_kv_16"],
-            embedding=configuration["cpu_model_embedding"],
-            use_mlock=configuration["cpu_model_use_mlock"]
+            kv_16=configuration["cpu_model_kv_16"]
             )
     else:
         raise Exception("Unknown model type: " + model_to_use)

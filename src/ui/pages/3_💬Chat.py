@@ -166,7 +166,7 @@ def render():
     # endregion
     
     st.write("This demo allows you to chat with a Large-Language-Model (e.g. Alpaca or ChatGPT) that can search the document index and answer your questions.")
-    if chat_info.name == "LLaMA.cpp":
+    if chat_info.accelerator == "CPU":
         st.write("⚠️WARNING: This model is running on a CPU! Expect long response times!⚠️")
     st.markdown("----")
       

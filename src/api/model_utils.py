@@ -7,8 +7,11 @@ from transformers.generation.streamers import BaseStreamer
 from transformers.generation.stopping_criteria import StoppingCriteria
 
 from transformers import AutoTokenizer
-from typing import List
+from typing import List,Optional
 import torch
+
+from llama_rs_python import Model,SessionConfig,Precision
+from llama_rs_python import GenerationConfig as RSGenerationConfig
 
 class ManualStopCondition(StoppingCriteria):
     """
@@ -117,3 +120,40 @@ class GeneratorStreamer(TextStreamer):
             else:
                 next_word = self.generated_text.get()
                 yield next_word
+                
+                
+                
+                
+class CPUStreamer():
+        def __init__(self,model:Model,config:RSGenerationConfig,prompt:str,stop_words:List[str]=[]) -> None:
+            self.model = model
+            self.config = config
+            self.prompt = prompt
+            self.stop_words = stop_words
+            self.generated_text = ""
+            self.result = None
+            self.generated_tokens = queue.Queue()
+            
+            self.thread = threading.Thread(target=self._run,daemon=True)
+            
+        def _run(self):
+            self.result = self.model.generate(prompt=self.prompt,generation_config=self.config,callback= self._callback)
+            
+        def _callback(self,token:str)->Optional[bool]:
+            self.generated_text += token
+            for stop_word in self.stop_words:
+                if stop_word in self.generated_text:
+                    return True
+            
+            self.generated_tokens.put(token)
+                
+        def  start(self):
+            self.thread.start()  
+            
+        def __iter__(self):
+            while self.thread.is_alive() or not self.generated_tokens.empty():
+                if self.generated_tokens.empty():
+                    time.sleep(0.1)
+                else:
+                    next_word = self.generated_tokens.get()
+                    yield next_word

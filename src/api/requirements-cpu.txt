@@ -1,6 +1,6 @@
 protobuf==3.20.1
 huggingface_hub
-llama-cpp-python[server]
+llama-rs-python==0.0.2
 openai
 pynvml
 farm-haystack

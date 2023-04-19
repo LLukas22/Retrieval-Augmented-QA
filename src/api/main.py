@@ -94,19 +94,15 @@ if __name__ == "__main__":
         #GPU Vars
         container.config.base_chat_model.from_env("BASE_CHAT_MODEL",default="decapoda-research/llama-7b-hf")
         container.config.use_peft.from_env("USE_PEFT",as_=parse_bool,default=True)
-        #container.config.adapter_chat_model.from_env("ADAPTER_CHAT_MODEL",default="nomic-ai/gpt4all-lora")
         container.config.adapter_chat_model.from_env("ADAPTER_CHAT_MODEL",default="tloen/alpaca-lora-7b")
-        
         
         container.config.chat_apply_optimizations.from_env("ADAPTER_APPLY_OPTIMIZATIONS",as_=parse_bool,default=True)
         
         #CPU Vars
-        container.config.cpu_model_repo.from_env("CPU_MODEL_REPO",default="LLukas22/alpaca-native-7B-4bit-ggjt")
-        container.config.cpu_model_filename.from_env("CPU_MODEL_FILENAME",default="ggjt-model.bin")
+        container.config.cpu_model_repo.from_env("CPU_MODEL_REPO",default="Sosaka/Alpaca-native-4bit-ggml")
+        container.config.cpu_model_filename.from_env("CPU_MODEL_FILENAME",default="ggml-alpaca-7b-q4.bin")
         container.config.cpu_model_threads.from_env("CPU_MODEL_THREADS",as_=int,default=8)
         container.config.cpu_model_kv_16.from_env("CPU_MODEL_KV_16",as_=parse_bool,default=True)
-        container.config.cpu_model_embedding.from_env("CPU_MODEL_EMBEDDING",as_=parse_bool,default=True)
-        container.config.cpu_model_use_mlock.from_env("CPU_MODEL_USE_MLOCK",as_=parse_bool,default=False)
         container.wire(modules=[__name__])
         
     
