@@ -5,8 +5,7 @@ LABEL org.opencontainers.image.licenses=MIT
 
 
 RUN apt-get update -y
-RUN apt-get install -y python3-pip graphviz-dev git gcc-4.9 
-RUN apt-get upgrade -y libstdc++6 
+RUN apt-get install -y python3-pip graphviz-dev 
 
 #Expose the ports
 EXPOSE 8001
@@ -19,7 +18,7 @@ WORKDIR /app
 # Install Requirements
 RUN --mount=type=cache,target=/root/.cache/pip pip3 install -r ./api/requirements-cpu.txt
 
-RUN --mount=type=cache,target=/root/.cache/pip pip3 install git+https://github.com/huggingface/transformers@a17841ac4945631e4e13c072fa2a329b98ebb8b6 
+RUN --mount=type=cache,target=/root/.cache/pip pip3 install transformers==4.28.1
 
 ENV PYTHONPATH "${PYTHONPATH}:/app"
 

@@ -48,7 +48,7 @@ peft==0.2.0
 bitsandbytes==0.37.2
 sentence-transformers>=2.2.0
 huggingface_hub
-git+https://github.com/huggingface/transformers@a17841ac4945631e4e13c072fa2a329b98ebb8b6#egg=transformers
+transformers==4.28.1
 llama-cpp-python
 
 #api dependencies
