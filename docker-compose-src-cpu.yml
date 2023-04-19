@@ -4,7 +4,7 @@ services:
   haystack-api:
     build:
       context: ./src
-      dockerfile: API.Dockerfile
+      dockerfile: API-CPU.Dockerfile
     image: haystack-api
     container_name: haystack-api
     restart: unless-stopped
@@ -19,7 +19,6 @@ services:
       - CHATMODEL=CPU    #OPENAI, GPU or CPU
       #CPU Specific Options
       - CPU_MODEL_THREADS=${CPU_THREADS}
-      - CPU_MODEL_USE_MLOCK=${CPU_MLOCK}
       - CHAT_MAX_INPUT_LENGTH=${MAX_INPUT_LENGTH}
 
     #cache model downloads over restarts

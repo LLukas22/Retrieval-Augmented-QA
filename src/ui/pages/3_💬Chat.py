@@ -200,7 +200,7 @@ def render():
         render_chat_history()
         answer = ""
         config = get_generation_config(temperature,top_p,max_new_tokens,repetition_penalty)
-        for i,piece in enumerate(batch_generator(connector.chat_streaming(chat_messages,config=config,stop_words=stop_words),size=10)):
+        for i,piece in enumerate(batch_generator(connector.chat_streaming(chat_messages,config=config,stop_words=stop_words),size= 2 if chat_info.accelerator == "CPU" else 10)):
             answer+=piece
             with placeholder_generated_massage:
                 show_message(answer,key=f"generated_answer_{i}",seed="Felix")

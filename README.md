@@ -17,7 +17,6 @@ an example `.env` config can be found  in `.env.example`.
 
 All modules are available as prebuild containers via the [Github container registry](https://github.com/LLukas22?tab=packages&repo_name=Retrieval-Augmented-QA). 
 
-⚠️If you want to use the CPU-Adapter you should probably build the api-container from source as it will build  llama.cpp according to your cpu  instructions!
 ## Overview
 The demo has three main components:
 * Streamlit web ui
@@ -34,7 +33,7 @@ It supports multiple chat adapter which are exposed via a streaming api.
 The following libraries are supported:
 * OpenAI: Uses the default ChatGPT API.To use this adapter a OpenAI API-Token has to be supplied.
 * Huggingface: Supports nearly all LLMs on the Huggingfacehub. Also supports PEFT finetuned models. To run this a GPU needs to be passed to the Container running the API.
-* LLaMA.cpp: Can run GGJT converted models like [Alpaca](https://huggingface.co/LLukas22/alpaca-native-7B-4bit-ggjt) on a CPU with relatively low resource usage. Use this adapter if you dont have a GPU. 
+* llama-rs: Can run GGML converted models like [Alpaca](https://huggingface.co/Sosaka/Alpaca-native-4bit-ggml) on a CPU with relatively low resource usage. Use this adapter if you dont have a GPU. 
 
 ## Semantic Search & Extractive QA Module
 The semantic search and extractive qa modules use [Haystack](https://haystack.deepset.ai/overview/intro) to query the ElasticSearch database.
@@ -77,12 +76,10 @@ To be able to run this repo on different hardware configurations many settings a
 | USE_PEFT                     | True                                      | Use PEFT                                   |
 | ADAPTER_CHAT_MODEL           | tloen/alpaca-lora-7b                      | Adapter chat model                         |
 | ADAPTER_APPLY_OPTIMIZATIONS  | True                                      | Apply Torch optimizations                  |
-| CPU_MODEL_REPO               | LLukas22/alpaca-native-7B-4bit-ggjt       | CPU model repository                       |
-| CPU_MODEL_FILENAME           | ggjt-model.bin                            | CPU model filename                         |
+| CPU_MODEL_REPO               | Sosaka/Alpaca-native-4bit-ggml            | CPU model repository                       |
+| CPU_MODEL_FILENAME           | ggml-alpaca-7b-q4.bi                      | CPU model filename                         |
 | CPU_MODEL_THREADS            | 8                                         | CPU model threads                          |
 | CPU_MODEL_KV_16              | True                                      | CPU model use f16 for KV-Store             |
-| CPU_MODEL_EMBEDDING          | True                                      | CPU model enable embedding mode            |
-| CPU_MODEL_USE_MLOCK          | False                                     | Force CPU Model to stay in RAM             |
 
 ### UI:
 

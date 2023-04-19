@@ -1,0 +1,40 @@
+name: Build & Push API-CPU-Container
+
+on:   
+  workflow_dispatch:
+
+  release:
+    types: [published]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: 'Get Previous tag'
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        with:
+          fallback: DEBUG # Optional fallback tag to use when no tag can be found
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 'Build and push Docker image'
+        env:
+          DOCKER_BUILDKIT: 1
+        run: |
+          docker buildx build --platform linux/amd64 ./src --file ./src/API-CPU.Dockerfile --tag ghcr.io/llukas22/retrieval-qa-api-cpu:latest --tag ghcr.io/llukas22/retrieval-qa-api-cpu:${{ steps.previoustag.outputs.tag }}
+          docker push --all-tags ghcr.io/llukas22/retrieval-qa-api-cpu

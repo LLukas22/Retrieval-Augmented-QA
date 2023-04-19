@@ -33,7 +33,12 @@ class HealthRouter(BaseRouter):
         from haystack import __version__ as hs_version
         from transformers import __version__ as transformers_version
         from torch import __version__ as torch_version
-        from accelerate import __version__ as accelerate_version
+        accelerate_version="Not installed"
+        try:
+            from accelerate import __version__ as accelerate_version
+        except:
+            pass
+            
         from fastapi import __version__ as fastapi_version
         from starlette import __version__ as starlette_version
         from uvicorn import __version__ as uvicorn_version
