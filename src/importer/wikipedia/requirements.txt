@@ -1,5 +1,5 @@
 datasets
 apache_beam
 mwparserfromhell
-wiki-dump-parser
+wikitextparser
 farm-haystack

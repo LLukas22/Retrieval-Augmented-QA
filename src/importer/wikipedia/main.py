@@ -4,7 +4,6 @@ import requests
 from pathlib import Path
 import bz2
 from tqdm  import tqdm
-import mwparserfromhell
 import wikitextparser
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
