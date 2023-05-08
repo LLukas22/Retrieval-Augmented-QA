@@ -10,8 +10,8 @@ from transformers import AutoTokenizer
 from typing import List,Optional
 import torch
 
-from llama_rs_python import Model,SessionConfig,Precision
-from llama_rs_python import GenerationConfig as RSGenerationConfig
+from llm_rs import Llama,SessionConfig,Precision
+from llm_rs import GenerationConfig as RSGenerationConfig
 
 class ManualStopCondition(StoppingCriteria):
     """
@@ -125,7 +125,7 @@ class GeneratorStreamer(TextStreamer):
                 
                 
 class CPUStreamer():
-        def __init__(self,model:Model,config:RSGenerationConfig,prompt:str,stop_words:List[str]=[]) -> None:
+        def __init__(self,model:Llama,config:RSGenerationConfig,prompt:str,stop_words:List[str]=[]) -> None:
             self.model = model
             self.config = config
             self.prompt = prompt
@@ -147,7 +147,7 @@ class CPUStreamer():
             
             self.generated_tokens.put(token)
                 
-        def  start(self):
+        def start(self):
             self.thread.start()  
             
         def __iter__(self):

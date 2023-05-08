@@ -3,7 +3,8 @@ huggingface_hub
 llama-rs-python==0.0.2
 openai
 pynvml
-farm-haystack
+farm-haystack[elasticsearch]
+llm-rs==0.1.1
 
 #api dependencies
 psutil

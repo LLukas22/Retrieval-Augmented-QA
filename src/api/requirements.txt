@@ -49,7 +49,7 @@ bitsandbytes==0.37.2
 sentence-transformers>=2.2.0
 huggingface_hub
 transformers==4.28.1
-llama-rs-python==0.0.2
+llm-rs==0.1.1
 
 #api dependencies
 psutil

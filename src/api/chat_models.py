@@ -2,8 +2,8 @@ from typing import Dict,List,Generator,Type,Optional
 import openai
 from transformers.generation.stopping_criteria import StoppingCriteriaList
 from transformers import AutoModel,AutoTokenizer,AutoModelForCausalLM,GenerationConfig,LlamaTokenizer,LlamaForCausalLM
-from llama_rs_python import Model,SessionConfig,Precision
-from llama_rs_python import GenerationConfig as RSGenerationConfig
+from llm_rs import Llama,SessionConfig,Precision
+from llm_rs import GenerationConfig as RSGenerationConfig
 from huggingface_hub import hf_hub_download
 import torch
 from abc import ABC, abstractmethod
@@ -241,16 +241,17 @@ class HF_Gpu_Adapter(ModelAdapter):
             self.stop_reason="Max Tokens!"
     
 class Cpu_Adapter(ModelAdapter): 
-    def __init__(self,hf_token:str=None,repository:str="Sosaka/Alpaca-native-4bit-ggml",filename:str="ggml-alpaca-7b-q4.bin",max_length:int=2048,threads:int=8,kv_16:bool=True) -> None:
+    def __init__(self,hf_token:str=None,repository:str="Sosaka/Alpaca-native-4bit-ggml",filename:str="ggml-alpaca-7b-q4.bin",max_length:int=2048,threads:int=8,kv_16:bool=True,mmap:bool=True) -> None:
         self.max_length = max_length
         self.threads=threads
         self.hf_token=hf_token
         self.repository=repository
         self.filename = filename
         self.kv_16=kv_16
+        self.mmap=mmap
            
     def info(self)->ModelInfo:
-        return ModelInfo(name="llama-rs",model=self.repository, accelerator="CPU")
+        return ModelInfo(name="llm-rs",model=self.repository, accelerator="CPU")
          
     def default_config(self)->GenerationConfig:
         return GenerationConfig(top_p=0.9,top_k=40,temperature=0.8,repetition_penalty=1.1,max_new_tokens=256)
@@ -258,8 +259,8 @@ class Cpu_Adapter(ModelAdapter):
     def load(self):
         self.ggjt_model = hf_hub_download(repo_id=self.repository, filename=self.filename,token=self.hf_token)  
         precision = Precision.FP16 if self.kv_16 else Precision.FP32
-        self.session_config = SessionConfig(threads=self.threads,context_length=self.max_length,keys_memory_type=precision,values_memory_type=precision)   
-        self.model = Model(str(self.ggjt_model),session_config=self.session_config,verbose=True)
+        self.session_config = SessionConfig(threads=self.threads,context_length=self.max_length,keys_memory_type=precision,values_memory_type=precision,prefer_mmap=self.mmap)   
+        self.model = Llama(str(self.ggjt_model),session_config=self.session_config,verbose=True)
     
     
     def _hf_to_rs_config(self,generationConfig:GenerationConfig)->RSGenerationConfig:
@@ -306,7 +307,8 @@ def adapter_factory(configuration:Configuration)->ModelAdapter:
             repository=configuration["cpu_model_repo"],
             filename=configuration["cpu_model_filename"],
             max_length=configuration["chat_max_length"],
-            kv_16=configuration["cpu_model_kv_16"]
+            kv_16=configuration["cpu_model_kv_16"],
+            mmap=configuration["cpu_model_mmap"]
             )
     else:
         raise Exception("Unknown model type: " + model_to_use)
